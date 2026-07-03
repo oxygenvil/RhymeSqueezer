@@ -60,9 +60,10 @@ h1 .kr{background:var(--pri);color:#fff;font-size:13px;padding:3px 7px;border-ra
 #go{display:block;width:100%;border:0;background:var(--pri);color:#fff;font-size:16px;font-weight:700;
   border-radius:12px;padding:14px;cursor:pointer;font-family:inherit}
 #go:active{opacity:.85}
-.opts{display:flex;justify-content:center;margin-top:10px}
+.opts{display:flex;justify-content:center;gap:16px;margin-top:10px}
 label.tog{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px;cursor:pointer;user-select:none}
 label.tog input{accent-color:var(--pri)}
+.opts select{border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12px;color:var(--ink);background:#fff;outline:none;font-family:inherit;cursor:pointer}
 
 #stat{margin:22px 4px 10px;font-size:13px;color:var(--dim)}
 #stat b{color:var(--pri)}
@@ -122,7 +123,20 @@ label.tog input{accent-color:var(--pri)}
     <button data-m="f">♪ 유사 속성</button>
   </div>
   <button id="go">검색</button>
-  <div class="opts"><label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만</label></div>
+  <div class="opts">
+    <label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만</label>
+    <label class="tog">
+      글자수 제한:
+      <select id="len-limit">
+        <option value="0">제한 없음</option>
+        <option value="1">1글자</option>
+        <option value="2">2글자</option>
+        <option value="3">3글자</option>
+        <option value="4">4글자</option>
+        <option value="5">5글자 이상</option>
+      </select>
+    </label>
+  </div>
 </div>
 
 <div id="stat"></div>
@@ -179,9 +193,7 @@ function compose(syls) {
 }
 
 // ===== ㄴ첨가 (합성어 경계 — 완전 자동 불가, 휴리스틱+예외로 처리) =====
-// 뒤 요소가 이 형태소면 거의 확실하게 ㄴ첨가
 const N_SUFFIX = ['잎', '여름', '이불', '이빨'];
-// 예외 발음 사전: 규칙으로 못 잡는 단어는 여기 추가하면 됨 (표기: 발음)
 const EXC = {
   '담요': '담뇨', '알약': '알략', '물약': '물략', '눈약': '눈냑', '안약': '안냑',
   '색연필': '생년필', '식용유': '시굥뉴', '막일': '망닐', '집안일': '지반닐',
@@ -194,14 +206,13 @@ const EXC = {
 const I_VOWELS = ['ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'].map(v => jI[v]);
 function nInsert(s, word) {
   for (let i = 0; i + 1 < s.length; i++) {
-    if (!s[i][2]) continue;                    // 받침이 있어야 함
+    if (!s[i][2]) continue;                    
     const nx = s[i + 1];
-    if (nx[0] !== cI['ㅇ']) continue;          // 뒤가 모음 시작
+    if (nx[0] !== cI['ㅇ']) continue;          
     const rest = word.slice(i + 1);
     const [j1] = splitJong(s[i][2]);
     const isSiot = (j1 === 'ㅅ' || j1 === 'ㅆ');
     const isIV = I_VOWELS.includes(nx[1]);
-    // (a) 접미 형태소  (b) 사이시옷 패턴: ㅅ받침 + 이계 모음 (단 '있'은 제외: 맛있다)
     if (N_SUFFIX.includes(rest) || (isSiot && isIV && word[i + 1] !== '있')) {
       nx[0] = cI['ㄴ'];
     }
@@ -210,28 +221,28 @@ function nInsert(s, word) {
 
 // 표기 음절 배열 -> 발음 음절 배열
 function pronounce(src) {
-  const s = src.map(x => x.slice()); // copy
+  const s = src.map(x => x.slice()); 
   const n = s.length;
   for (let i = 0; i < n; i++) {
-    let [j1, j2] = splitJong(s[i][2]); // 문자 or null
+    let [j1, j2] = splitJong(s[i][2]); 
     const next = i + 1 < n ? s[i + 1] : null;
     const nc = next ? CHO[next[0]] : null;
 
-    if (!next) { // 어말: 겹받침 단순화 + 대표음
+    if (!next) { 
       let f = j2 ? pickDouble(j1, j2) : j1;
       s[i][2] = f ? gI[rep(f)] : 0;
       break;
     }
 
-    if (nc === 'ㅇ') { // 모음 앞
-      if (j2) { // 겹받침: 뒤 자음 연음 (ㅅ은 ㅆ으로)
-        if (j2 === 'ㅎ') { next[0] = cI[j1]; s[i][2] = 0; } // 않아 -> 아나 (ㅎ탈락+연음)
+    if (nc === 'ㅇ') { 
+      if (j2) { 
+        if (j2 === 'ㅎ') { next[0] = cI[j1]; s[i][2] = 0; } 
         else {
           s[i][2] = gI[j1];
           next[0] = cI[j2 === 'ㅅ' ? 'ㅆ' : j2];
         }
-      } else if (j1 === 'ㅎ') { s[i][2] = 0; } // 좋아 -> 조아
-      else if (j1 && j1 !== 'ㅇ') { // 연음 (+구개음화: 같이->가치, 굳이->구지)
+      } else if (j1 === 'ㅎ') { s[i][2] = 0; } 
+      else if (j1 && j1 !== 'ㅇ') { 
         let lc = j1;
         if (next[1] === jI['ㅣ']) { if (lc === 'ㄷ') lc = 'ㅈ'; else if (lc === 'ㅌ') lc = 'ㅊ'; }
         next[0] = cI[lc];
@@ -240,14 +251,12 @@ function pronounce(src) {
       continue;
     }
 
-    // 자음 앞: 먼저 ㅎ 격음화 (놓다->노타, 않고->안코, 많다->만타)
     if ((j1 === 'ㅎ' || j2 === 'ㅎ') && ASP[nc] && nc !== 'ㅂ') {
       next[0] = cI[ASP[nc]];
       const keep = j1 === 'ㅎ' ? null : j1;
       s[i][2] = keep ? gI[keep] : 0;
       continue;
     }
-    // 격음화 역방향: 받침 ㄱㄷㅂ(ㅈ) + ㅎ -> 격음 (입학->이팍, 맏형->마텽)
     let f = j2 ? pickDouble(j1, j2) : j1;
     f = f ? rep(f) : null;
     if (nc === 'ㅎ' && f && ASP[f]) {
@@ -255,24 +264,19 @@ function pronounce(src) {
       s[i][2] = 0;
       continue;
     }
-    // 대표음 확정
-    let jong = f; // ㄱㄴㄷㄹㅁㅂㅇ or null
+    let jong = f; 
     let cho = nc;
 
     if (jong) {
-      // 유음화: ㄴ+ㄹ, ㄹ+ㄴ -> ㄹㄹ
       if (jong === 'ㄴ' && cho === 'ㄹ') jong = 'ㄹ';
       else if (jong === 'ㄹ' && cho === 'ㄴ') cho = 'ㄹ';
-      // 비음화
       else if ('ㄱㄷㅂ'.includes(jong) && (cho === 'ㄴ' || cho === 'ㅁ')) {
         jong = { 'ㄱ': 'ㅇ', 'ㄷ': 'ㄴ', 'ㅂ': 'ㅁ' }[jong];
       } else if (cho === 'ㄹ' && 'ㅁㅇ'.includes(jong)) { cho = 'ㄴ'; }
       else if (cho === 'ㄹ' && 'ㄱㅂ'.includes(jong)) {
         jong = { 'ㄱ': 'ㅇ', 'ㅂ': 'ㅁ' }[jong]; cho = 'ㄴ';
       }
-      // 경음화: 파열 대표음 뒤 평음
       else if ('ㄱㄷㅂ'.includes(jong) && TENSE[cho]) { cho = TENSE[cho]; }
-      // 겹받침에서 장애음이 탈락한 경우도 경음화 (넓다->널따, 값도->갑또는 위에서 처리)
       else if (jong === 'ㄹ' && j2 && 'ㄱㅂㅅㅌ'.includes(j2) && TENSE[cho]) { cho = TENSE[cho]; }
     }
     s[i][2] = jong ? gI[jong] : 0;
@@ -280,14 +284,13 @@ function pronounce(src) {
   }
   return s;
 }
-// 겹받침 대표 선택 (자음 앞/어말)
 function pickDouble(a, b) {
   const d = a + b;
-  if (d === 'ㄹㄱ') return 'ㄱ'; // 닭, 밝다
-  if (d === 'ㄹㅁ') return 'ㅁ'; // 삶
-  if (d === 'ㄹㅍ') return 'ㅂ'; // 읊다
-  if (b === 'ㅎ') return a;      // ㄶ ㅀ
-  return a; // ㄳㄵㄼㄽㄾㅄ -> 앞 자음
+  if (d === 'ㄹㄱ') return 'ㄱ'; 
+  if (d === 'ㄹㅁ') return 'ㅁ'; 
+  if (d === 'ㄹㅍ') return 'ㅂ'; 
+  if (b === 'ㅎ') return a;      
+  return a; 
 }
 
 function g2p(word) {
@@ -316,19 +319,16 @@ const PRON=new Array(WORDS.length);
 function groupMap(groups, alphabet){
   const m=new Array(alphabet.length).fill(-1);
   groups.forEach((g,gi)=>{ for(const ch of g) m[alphabet.indexOf(ch)]=gi; });
-  // 미지정은 자기 자신 그룹
   let next=groups.length;
   for(let i=0;i<m.length;i++) if(m[i]<0) m[i]=next++;
   return m;
 }
-// 유사 음소 (Slant Rhyme): 조음 위치·입모양이 비슷한 소리를 한 그룹으로
 const P_CHO=groupMap(['ㄱㄲㅋ','ㄷㄸㅌ','ㅂㅃㅍ','ㅅㅆ','ㅈㅉㅊ','ㄴㅁㄹㅇㅎ'],CHO);
 const P_JUNG=groupMap(['ㅏㅑㅘ','ㅐㅔㅒㅖㅙㅞㅚ','ㅓㅕㅝ','ㅗㅛ','ㅜㅠㅡ','ㅣㅢㅟ'],JUNG);
 const P_JONG=groupMap(['ㄴㅁㅇㄵㄶㄻ','ㄹㄼㄽㄾㅀ','ㄱㅋㄲㄳㄺ','ㅂㅍㅄㄿ','ㄷㅌㅅㅆㅈㅊㅎ'],JONG);
-// 유사 속성 (Groove): 소리의 질감(조음 방법) 기준. 모음은 유사 음소와 동일
-const F_CHO=groupMap(['ㄱㄲㅋㄷㄸㅌㅂㅃㅍ','ㅅㅆㅈㅉㅊ','ㄴㄹㅁㅇㅎ'],CHO); // 끊는 소리/치찰음/잇는 소리
+const F_CHO=groupMap(['ㄱㄲㅋㄷㄸㅌㅂㅃㅍ','ㅅㅆㅈㅉㅊ','ㄴㄹㅁㅇㅎ'],CHO); 
 const F_JUNG=P_JUNG;
-const F_JONG=groupMap(['ㄴㄹㅁㅇㄵㄶㄻㄼㄽㄾㅀ','ㄱㄲㄳㄺㄷㅅㅆㅈㅊㅋㅌㅎㅂㅍㅄㄿ'],JONG); // 울림/안울림
+const F_JONG=groupMap(['ㄴㄹㅁㅇㄵㄶㄻㄼㄽㄾㅀ','ㄱㄲㄳㄺㄷㅅㅆㅈㅊㅋㅌㅎㅂㅍㅄㄿ'],JONG); 
 const GROUPS={p:[P_CHO,P_JUNG,P_JONG],f:[F_CHO,F_JUNG,F_JONG]};
 const SLOTNAME=['초성','중성','종성'];
 const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[s[2]]:'–');
@@ -367,7 +367,6 @@ function analyze(){
   const p=g2p(m);
   qSyls=decompose(p);
   pr.textContent='['+p+']'+(p!==m?'  ← '+m:'');
-  // 기본 선택: 마지막 음절의 중성+종성(받침 있으면)
   sel.clear();
   const last=qSyls.length-1;
   sel.add(last+':1');
@@ -394,26 +393,58 @@ function renderSyls(p){
 }
 function updateCnt(){ document.getElementById('cnt').textContent=sel.size+'개 선택됨'; }
 
+// ----- 원본 단어와 유사도 계산 -----
+function getSim(qD, tD) {
+  let score = 0;
+  const minLen = Math.min(qD.length, tD.length);
+  // 끝 음절부터 매칭하여 비교
+  for (let i = 1; i <= minLen; i++) {
+    const q = qD[qD.length - i], t = tD[tD.length - i];
+    // 초성 가중치
+    if (q[0] === t[0]) score += 1;
+    else if (P_CHO[q[0]] === P_CHO[t[0]]) score += 0.5;
+    // 중성 가중치 (라임에서 가장 중요하므로 점수가 큼)
+    if (q[1] === t[1]) score += 2;
+    else if (P_JUNG[q[1]] === P_JUNG[t[1]]) score += 1;
+    // 종성 가중치
+    if (q[2] === t[2]) score += 1;
+    else if (P_JONG[q[2]] === P_JONG[t[2]]) score += 0.5;
+  }
+  // 글자수 차이에 따른 페널티 적용
+  score -= Math.abs(qD.length - tD.length) * 0.5;
+  return score;
+}
+
 // ----- 검색 -----
 function search(){
   const grid=document.getElementById('grid'), stat=document.getElementById('stat');
   grid.innerHTML=''; document.getElementById('more').style.display='none';
   if(!qSyls||!sel.size){ stat.innerHTML=qSyls?'음소를 하나 이상 선택해줘.':''; return; }
   if(PRON[WORDS.length-1]===undefined){ stat.innerHTML='아직 발음 사전을 만드는 중이야, 잠시 후 다시.'; return; }
-  // 조건: 끝에서부터 offset, slot, 목표음소
+  
   const qn=qSyls.length;
   const conds=[...sel].map(k=>{
     const [i,slot]=k.split(':').map(Number);
-    return [qn-1-i, slot, qSyls[i][slot]]; // [끝offset, slot, 값]
+    return [qn-1-i, slot, qSyls[i][slot]]; 
   });
   const gm=mode==='x'?null:GROUPS[mode];
   const qWord=document.getElementById('q').value.trim().split(/\s+/).pop().replace(/[^가-힣]/g,'');
+  const lenLimit = parseInt(document.getElementById('len-limit').value, 10);
   const t0=performance.now();
   results=[];
   const N=commonOnly?RANKED:WORDS.length;
+  
   for(let i=0;i<N;i++){
+    const w=WORDS[i];
+    if(w===qWord) continue;
+
+    // 글자수 필터링 적용
+    if(lenLimit > 0) {
+      if(lenLimit === 5 && w.length < 5) continue;
+      if(lenLimit < 5 && w.length !== lenLimit) continue;
+    }
+
     const p=PRON[i];
-    if(WORDS[i]===qWord) continue;
     const pl=p.length;
     let ok=true, exact=0;
     for(const [off,slot,val] of conds){
@@ -424,9 +455,20 @@ function search(){
       if(v===val){ exact++; continue; }
       if(!gm || gm[slot][v]!==gm[slot][val]){ ok=false; break; }
     }
-    if(ok) results.push([exact,i]);
+    if(ok) results.push([exact, i]);
   }
-  results.sort((a,b)=> b[0]-a[0] || a[1]-b[1]);
+
+  // 필터링된 결과에 대해 원본 발음과의 유사도 점수 계산
+  for (let j = 0; j < results.length; j++) {
+    const i = results[j][1];
+    const tD = decompose(PRON[i]);
+    const simScore = tD ? getSim(qSyls, tD) : -999;
+    results[j].push(simScore); // [exact, i, simScore]
+  }
+
+  // 정렬: 1순위 조건 일치율(exact), 2순위 원본 유사도(simScore), 3순위 사용빈도(i)
+  results.sort((a,b)=> b[0]-a[0] || b[2]-a[2] || a[1]-b[1]);
+  
   const ms=(performance.now()-t0).toFixed(0);
   stat.innerHTML=results.length
     ? '<b>'+results.length.toLocaleString()+'개</b> · '+ms+'ms · 보라색이 조건에 맞은 소리'
@@ -448,7 +490,7 @@ function render(conds){
   const end=Math.min(shown+PAGE,results.length);
   const frag=document.createDocumentFragment();
   for(let k=shown;k<end;k++){
-    const [ex,i]=results[k], w=WORDS[i], p=PRON[i];
+    const [ex,i,simScore]=results[k], w=WORDS[i], p=PRON[i];
     const card=document.createElement('div'); card.className='card'; card.dataset.w=w;
     const hits={};
     for(const [off,slot] of conds){ const pos=p.length-1-off; (hits[pos]=hits[pos]||new Set()).add(slot); }
@@ -487,6 +529,7 @@ document.getElementById('modes').addEventListener('click',e=>{
   if(results.length||qSyls) search();
 });
 document.getElementById('common').addEventListener('change',e=>{commonOnly=e.target.checked; if(qSyls)search();});
+document.getElementById('len-limit').addEventListener('change', () => { if(qSyls) search(); });
 document.getElementById('more').onclick=()=>render();
 document.getElementById('grid').addEventListener('click',e=>{
   const c=e.target.closest('.card'); if(!c)return;
