@@ -53,18 +53,19 @@ h1 .kr{background:var(--pri);color:#fff;font-size:13px;padding:3px 7px;border-ra
 .syl button.on .p{color:#fff}
 .hint{color:var(--dim);font-size:12px;padding:20px 4px}
 
-/* 모드 버튼 및 툴팁 */
+/* 모드 버튼 및 툴팁 (구조 개선) */
 .modes{display:flex;justify-content:center;gap:6px;margin:18px 0 12px;flex-wrap:wrap}
-.modes button{position:relative;border:1px solid var(--line);background:#fff;border-radius:999px;color:var(--dim);
+.mode-wrap{position:relative;display:inline-flex;}
+.modes button{border:1px solid var(--line);background:#fff;border-radius:999px;color:var(--dim);
   font-size:13px;padding:8px 16px;cursor:pointer;font-family:inherit}
 .modes button.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri);font-weight:700}
 .mode-tip{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
   background:rgba(31,36,48,0.95);color:#fff;padding:12px;border-radius:8px;font-size:11px;
   width:260px;text-align:left;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.15);
   pointer-events:none;font-weight:normal;line-height:1.45;word-break:keep-all;}
-.modes button:hover .mode-tip{display:block;}
+.mode-wrap:hover .mode-tip{display:block;}
 .mode-tip strong{display:block;color:var(--pri-line);margin-bottom:6px;font-size:12px;font-weight:700;}
-.mode-tip hr{border:0;height:1px;background:rgba(255,255,255,0.2);margin:8px 0;}
+.mode-tip .line{display:block;height:1px;background:rgba(255,255,255,0.2);margin:8px 0;}
 .mode-tip .d{color:rgba(255,255,255,0.7);font-size:10px;line-height:1.6;}
 
 #go{display:block;width:100%;border:0;background:var(--pri);color:#fff;font-size:16px;font-weight:700;
@@ -87,4 +88,535 @@ label.tog input[type="checkbox"]{accent-color:var(--pri)}
 /* 단어 상자 및 클릭 툴팁 */
 .card{position:relative;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 11px;cursor:pointer}
 .card:active{border-color:var(--pri)}
-.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.card .w{font-size:16px;font-weight:700}
+.card .tag{font-size:9px;color:var(--dim);white-space:nowrap}
+.card .pr{font-size:11px;color:var(--dim);margin-top:1px;min-height:14px}
+.card-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:rgba(124,58,237,0.95);color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;
+  white-space:nowrap;z-index:10;box-shadow:0 2px 8px rgba(124,58,237,0.3);pointer-events:none;font-weight:500;}
+.card-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border-width:5px;border-style:solid;border-color:rgba(124,58,237,0.95) transparent transparent transparent;}
+.card-tip.show{display:block;animation:popIn 0.2s cubic-bezier(0.18,0.89,0.32,1.28) forwards;}
+@keyframes popIn{from{opacity:0;transform:translate(-50%, 4px) scale(0.95)}to{opacity:1;transform:translate(-50%, 0) scale(1)}}
+
+.jrow{display:flex;gap:4px;margin-top:8px;justify-content:center}
+.jsyl{display:flex;flex-direction:column;gap:2px}
+.jsyl span{font-size:10px;line-height:1;color:var(--dim);text-align:center;padding:3px 5px;
+  border-radius:4px;background:var(--bg);min-width:20px}
+.jsyl span.hit{background:var(--pri);color:#fff;font-weight:700}
+.jsyl span.void{opacity:.35}
+#more{display:none;margin:16px auto 0;background:#fff;border:1px solid var(--line);
+  border-radius:10px;color:var(--dim);font-size:13px;padding:10px 26px;cursor:pointer;font-family:inherit}
+.empty{color:var(--dim);font-size:13px;padding:24px 4px;text-align:center;line-height:1.8}
+#loading{position:fixed;inset:0;background:rgba(245,246,250,.92);display:flex;flex-direction:column;
+  gap:10px;align-items:center;justify-content:center;font-size:13px;color:var(--dim);z-index:9}
+#loading .bar{width:200px;height:5px;border-radius:99px;background:var(--line);overflow:hidden}
+#loading .bar i{display:block;height:100%;width:0%;background:var(--pri);transition:width .15s}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--pri);color:#fff;
+  font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;
+  transition:opacity .18s}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast,#loading .bar i, .card-tip.show{transition:none;animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1><span class="kr">KR</span>라임 검색기</h1>
+  <div class="sub">모든 표시는 <b>소리(발음)</b> 기준입니다 — 표기가 아니라 발음으로 찾아요</div>
+</header>
+
+
+<div class="panel">
+  <div class="cols">
+    <div class="col-in">
+      <div class="lab"><span>단어 입력 (표기)</span></div>
+      <div class="inbox">
+        <input id="q" type="search" placeholder="타겟 입력" autocomplete="off" autofocus>
+        <button id="clear" aria-label="지우기">✕</button>
+      </div>
+      <div class="pron">분석한 발음<b id="pron">—</b></div>
+    </div>
+    <div class="col-ph">
+      <div class="lab"><span>검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택됨</span></div>
+      <div id="syls"><div class="hint">단어를 입력하면 음절이 나타나요.<br>초성·중성·종성을 탭해서 검색 조건을 고르세요.</div></div>
+    </div>
+  </div>
+  
+  <div class="modes" id="modes">
+    <div class="mode-wrap">
+      <button data-m="x">완전 일치</button>
+      <div class="mode-tip">
+        <strong>완전 일치</strong>
+        선택한 음소와 정확히 일치하는 단어만 찾습니다.
+      </div>
+    </div>
+    <div class="mode-wrap">
+      <button data-m="p" class="on">≈ 유사 음소</button>
+      <div class="mode-tip">
+        <strong>유사 음소 (기본)</strong>
+        발음이 비슷한 음소끼리 그룹화하여 매칭합니다.
+        <div class="line"></div>
+        <div class="d">
+          [초성] ㄱㄲㅋ / ㄷㄸㅌ / ㅂㅃㅍ / ㅅㅆ / ㅈㅉㅊ / ㄴㅁㄹㅇㅎ<br>
+          [중성] ㅏㅑㅘ / ㅐㅔㅒㅖㅙㅞㅚ / ㅓㅕㅝ / ㅗㅛ / ㅜㅠㅡ / ㅣㅢㅟ<br>
+          [종성] ㄴㅁㅇ... / ㄹ... / ㄱ... / ㅂ... / ㄷ...
+        </div>
+      </div>
+    </div>
+    <div class="mode-wrap">
+      <button data-m="f">♪ 유사 속성</button>
+      <div class="mode-tip">
+        <strong>유사 속성 (광범위)</strong>
+        더 넓은 범위의 조음 위치와 방식으로 묶어 매칭합니다.
+        <div class="line"></div>
+        <div class="d">
+          [초성] ㄱ~ㅍ(파열) / ㅅ~ㅊ(마찰·파찰) / ㄴ~ㅎ(비·유음)<br>
+          [중성] 유사 음소 모드와 동일<br>
+          [종성] 울림소리(ㄴㄹㅁㅇ) / 안울림소리(ㄱㄷㅂ)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="go">검색</button>
+  <div class="opts">
+    <label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만</label>
+    <label class="tog" title="0은 제한 없음을 의미합니다.">
+      글자수:
+      <div class="num-wrap">
+        <button type="button" id="len-dec">◀</button>
+        <input type="number" id="len-limit" value="0" min="0">
+        <button type="button" id="len-inc">▶</button>
+      </div>
+    </label>
+  </div>
+</div>
+
+<div id="stat"></div>
+<div id="grid"></div>
+<button id="more">더 보기</button>
+</div>
+
+<div id="loading"><div>사전 27만 단어의 발음을 계산하는 중…</div><div class="bar"><i id="lbar"></i></div></div>
+<div id="toast"></div>
+
+<script src="./단어데이터.js" onerror="window.__DATA_MISSING=1"></script>
+<script>
+'use strict';
+// ===== 한국어 표준발음 근사 엔진 =====
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+const JONG = '\u0000ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+const cI = {}, jI = {}, gI = {};
+[...CHO].forEach((c, i) => cI[c] = i);
+[...JUNG].forEach((c, i) => jI[c] = i);
+[...JONG].forEach((c, i) => gI[c] = i);
+
+const SPLIT = {
+  'ㄳ': ['ㄱ', 'ㅅ'], 'ㄵ': ['ㄴ', 'ㅈ'], 'ㄶ': ['ㄴ', 'ㅎ'], 'ㄺ': ['ㄹ', 'ㄱ'],
+  'ㄻ': ['ㄹ', 'ㅁ'], 'ㄼ': ['ㄹ', 'ㅂ'], 'ㄽ': ['ㄹ', 'ㅅ'], 'ㄾ': ['ㄹ', 'ㅌ'],
+  'ㄿ': ['ㄹ', 'ㅍ'], 'ㅀ': ['ㄹ', 'ㅎ'], 'ㅄ': ['ㅂ', 'ㅅ']
+};
+function splitJong(idx) {
+  const ch = JONG[idx];
+  if (SPLIT[ch]) return SPLIT[ch];
+  return idx ? [ch, null] : [null, null];
+}
+const REP = { 'ㄲ': 'ㄱ', 'ㅋ': 'ㄱ', 'ㅅ': 'ㄷ', 'ㅆ': 'ㄷ', 'ㅈ': 'ㄷ', 'ㅊ': 'ㄷ', 'ㅌ': 'ㄷ', 'ㅎ': 'ㄷ', 'ㅍ': 'ㅂ' };
+const rep = c => REP[c] || c;
+const TENSE = { 'ㄱ': 'ㄲ', 'ㄷ': 'ㄸ', 'ㅂ': 'ㅃ', 'ㅅ': 'ㅆ', 'ㅈ': 'ㅉ' };
+const ASP = { 'ㄱ': 'ㅋ', 'ㄷ': 'ㅌ', 'ㅈ': 'ㅊ', 'ㅂ': 'ㅍ' };
+
+function decompose(word) {
+  const out = [];
+  for (const ch of word) {
+    const c = ch.charCodeAt(0) - 0xAC00;
+    if (c < 0 || c > 11171) return null;
+    out.push([(c / 588) | 0, ((c / 28) | 0) % 21, c % 28]);
+  }
+  return out;
+}
+function compose(syls) {
+  return syls.map(s => String.fromCharCode(0xAC00 + s[0] * 588 + s[1] * 28 + s[2])).join('');
+}
+
+const N_SUFFIX = ['잎', '여름', '이불', '이빨'];
+const EXC = {
+  '담요': '담뇨', '알약': '알략', '물약': '물략', '눈약': '눈냑', '안약': '안냑',
+  '색연필': '생년필', '식용유': '시굥뉴', '막일': '망닐', '집안일': '지반닐',
+  '콩엿': '콩녇', '눈요기': '눈뇨기', '금융': '금늉', '맨입': '맨닙', '한입': '한닙',
+  '늑막염': '능망념', '맹장염': '맹장념', '장염': '장념', '폐렴': '폐렴',
+  '맛없다': '마덥따', '맛없어': '마덥써', '멋없다': '머덥따', '멋없어': '머덥써',
+  '첫인상': '처딘상', '첫인사': '처딘사', '헛웃음': '허두슴', '몇월': '며둴',
+  '눈인사': '눈닌사', '밤이슬': '밤니슬', '한여름': '한녀름'
+};
+const I_VOWELS = ['ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'].map(v => jI[v]);
+function nInsert(s, word) {
+  for (let i = 0; i + 1 < s.length; i++) {
+    if (!s[i][2]) continue;                    
+    const nx = s[i + 1];
+    if (nx[0] !== cI['ㅇ']) continue;          
+    const rest = word.slice(i + 1);
+    const [j1] = splitJong(s[i][2]);
+    const isSiot = (j1 === 'ㅅ' || j1 === 'ㅆ');
+    const isIV = I_VOWELS.includes(nx[1]);
+    if (N_SUFFIX.includes(rest) || (isSiot && isIV && word[i + 1] !== '있')) {
+      nx[0] = cI['ㄴ'];
+    }
+  }
+}
+
+function pronounce(src) {
+  const s = src.map(x => x.slice()); 
+  const n = s.length;
+  for (let i = 0; i < n; i++) {
+    let [j1, j2] = splitJong(s[i][2]); 
+    const next = i + 1 < n ? s[i + 1] : null;
+    const nc = next ? CHO[next[0]] : null;
+
+    if (!next) { 
+      let f = j2 ? pickDouble(j1, j2) : j1;
+      s[i][2] = f ? gI[rep(f)] : 0;
+      break;
+    }
+
+    if (nc === 'ㅇ') { 
+      if (j2) { 
+        if (j2 === 'ㅎ') { next[0] = cI[j1]; s[i][2] = 0; } 
+        else {
+          s[i][2] = gI[j1];
+          next[0] = cI[j2 === 'ㅅ' ? 'ㅆ' : j2];
+        }
+      } else if (j1 === 'ㅎ') { s[i][2] = 0; } 
+      else if (j1 && j1 !== 'ㅇ') { 
+        let lc = j1;
+        if (next[1] === jI['ㅣ']) { if (lc === 'ㄷ') lc = 'ㅈ'; else if (lc === 'ㅌ') lc = 'ㅊ'; }
+        next[0] = cI[lc];
+        s[i][2] = 0;
+      }
+      continue;
+    }
+
+    if ((j1 === 'ㅎ' || j2 === 'ㅎ') && ASP[nc] && nc !== 'ㅂ') {
+      next[0] = cI[ASP[nc]];
+      const keep = j1 === 'ㅎ' ? null : j1;
+      s[i][2] = keep ? gI[keep] : 0;
+      continue;
+    }
+    let f = j2 ? pickDouble(j1, j2) : j1;
+    f = f ? rep(f) : null;
+    if (nc === 'ㅎ' && f && ASP[f]) {
+      next[0] = cI[ASP[f]];
+      s[i][2] = 0;
+      continue;
+    }
+    let jong = f; 
+    let cho = nc;
+
+    if (jong) {
+      if (jong === 'ㄴ' && cho === 'ㄹ') jong = 'ㄹ';
+      else if (jong === 'ㄹ' && cho === 'ㄴ') cho = 'ㄹ';
+      else if ('ㄱㄷㅂ'.includes(jong) && (cho === 'ㄴ' || cho === 'ㅁ')) {
+        jong = { 'ㄱ': 'ㅇ', 'ㄷ': 'ㄴ', 'ㅂ': 'ㅁ' }[jong];
+      } else if (cho === 'ㄹ' && 'ㅁㅇ'.includes(jong)) { cho = 'ㄴ'; }
+      else if (cho === 'ㄹ' && 'ㄱㅂ'.includes(jong)) {
+        jong = { 'ㄱ': 'ㅇ', 'ㅂ': 'ㅁ' }[jong]; cho = 'ㄴ';
+      }
+      else if ('ㄱㄷㅂ'.includes(jong) && TENSE[cho]) { cho = TENSE[cho]; }
+      else if (jong === 'ㄹ' && j2 && 'ㄱㅂㅅㅌ'.includes(j2) && TENSE[cho]) { cho = TENSE[cho]; }
+    }
+    s[i][2] = jong ? gI[jong] : 0;
+    next[0] = cI[cho];
+  }
+  return s;
+}
+function pickDouble(a, b) {
+  const d = a + b;
+  if (d === 'ㄹㄱ') return 'ㄱ'; 
+  if (d === 'ㄹㅁ') return 'ㅁ'; 
+  if (d === 'ㄹㅍ') return 'ㅂ'; 
+  if (b === 'ㅎ') return a;      
+  return a; 
+}
+
+function g2p(word) {
+  if (EXC[word]) return EXC[word];
+  const d = decompose(word);
+  if (!d) return word;
+  nInsert(d, word);
+  return compose(pronounce(d));
+}
+
+
+// ===== 앱 =====
+if(window.__DATA_MISSING||!window.RHYME_DATA){
+  document.getElementById('loading').innerHTML=
+    '<div style="max-width:340px;text-align:center;line-height:1.8">'+
+    '<b>단어데이터.js 파일을 찾을 수 없어요.</b><br>'+
+    '「단어데이터.js」를 이 HTML 파일과 <u>같은 폴더</u>에 두고 새로고침해 주세요.</div>';
+  throw new Error('no data');
+}
+const RANKED=window.RHYME_DATA.ranked;
+const WORDS=window.RHYME_DATA.words.split(' ');
+Object.assign(EXC, window.RHYME_DATA.exc||{});
+const PRON=new Array(WORDS.length);
+
+// ----- 유사도 그룹 -----
+function groupMap(groups, alphabet){
+  const m=new Array(alphabet.length).fill(-1);
+  groups.forEach((g,gi)=>{ for(const ch of g) m[alphabet.indexOf(ch)]=gi; });
+  let next=groups.length;
+  for(let i=0;i<m.length;i++) if(m[i]<0) m[i]=next++;
+  return m;
+}
+const P_CHO=groupMap(['ㄱㄲㅋ','ㄷㄸㅌ','ㅂㅃㅍ','ㅅㅆ','ㅈㅉㅊ','ㄴㅁㄹㅇㅎ'],CHO);
+const P_JUNG=groupMap(['ㅏㅑㅘ','ㅐㅔㅒㅖㅙㅞㅚ','ㅓㅕㅝ','ㅗㅛ','ㅜㅠㅡ','ㅣㅢㅟ'],JUNG);
+const P_JONG=groupMap(['ㄴㅁㅇㄵㄶㄻ','ㄹㄼㄽㄾㅀ','ㄱㅋㄲㄳㄺ','ㅂㅍㅄㄿ','ㄷㅌㅅㅆㅈㅊㅎ'],JONG);
+const F_CHO=groupMap(['ㄱㄲㅋㄷㄸㅌㅂㅃㅍ','ㅅㅆㅈㅉㅊ','ㄴㄹㅁㅇㅎ'],CHO); 
+const F_JUNG=P_JUNG;
+const F_JONG=groupMap(['ㄴㄹㅁㅇㄵㄶㄻㄼㄽㄾㅀ','ㄱㄲㄳㄺㄷㅅㅆㅈㅊㅋㅌㅎㅂㅍㅄㄿ'],JONG); 
+const GROUPS={p:[P_CHO,P_JUNG,P_JONG],f:[F_CHO,F_JUNG,F_JONG]};
+const SLOTNAME=['초성','중성','종성'];
+const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[s[2]]:'–');
+
+// ----- 상태 -----
+let mode='p', commonOnly=true, qSyls=null, sel=new Set(), results=[], shown=0;
+const PAGE=60;
+
+// ----- 발음 사전 구축 (청크 처리) -----
+(function build(){
+  const bar=document.getElementById('lbar');
+  let i=0;
+  function chunk(){
+    const end=Math.min(i+20000,WORDS.length);
+    for(;i<end;i++){ const w=WORDS[i]; const p=g2p(w); PRON[i]=p; }
+    bar.style.width=(i/WORDS.length*100)+'%';
+    if(i<WORDS.length) setTimeout(chunk,0);
+    else{ document.getElementById('loading').remove();
+      const s=document.createElement('div');
+      s.style.cssText='text-align:center;color:var(--dim);font-size:11px;margin-top:6px';
+      s.textContent='데이터 v'+(window.RHYME_DATA.version||'?')+' · '+WORDS.length.toLocaleString()+'단어';
+      document.querySelector('header').appendChild(s); }
+  }
+  setTimeout(chunk,30);
+})();
+
+// ----- 입력 분석 -----
+function analyze(){
+  const raw=document.getElementById('q').value.trim();
+  const m=raw.split(/\s+/).pop().replace(/[^가-힣]/g,'');
+  document.getElementById('clear').style.display=raw?'block':'none';
+  const box=document.getElementById('syls'), pr=document.getElementById('pron');
+  if(!m){ qSyls=null; sel.clear();
+    box.innerHTML='<div class="hint">단어를 입력하면 음절이 나타나요.<br>초성·중성·종성을 탭해서 검색 조건을 고르세요.</div>';
+    pr.textContent='—'; updateCnt(); return; }
+  const p=g2p(m);
+  qSyls=decompose(p);
+  pr.textContent='['+p+']'+(p!==m?'  ← '+m:'');
+  sel.clear();
+  const last=qSyls.length-1;
+  sel.add(last+':1');
+  if(qSyls[last][2]) sel.add(last+':2');
+  renderSyls(p);
+}
+function renderSyls(p){
+  const box=document.getElementById('syls');
+  box.innerHTML='';
+  qSyls.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='syl';
+    d.innerHTML='<div class="head">'+p[i]+'</div>';
+    for(let slot=0;slot<3;slot++){
+      const b=document.createElement('button');
+      b.innerHTML='<span class="g">'+SLOTNAME[slot]+'</span><span class="p">'+SLOTCHAR(s,slot)+'</span>';
+      const k=i+':'+slot;
+      if(sel.has(k)) b.classList.add('on');
+      b.onclick=()=>{ sel.has(k)?sel.delete(k):sel.add(k); b.classList.toggle('on'); updateCnt(); };
+      d.appendChild(b);
+    }
+    box.appendChild(d);
+  });
+  updateCnt();
+}
+function updateCnt(){ document.getElementById('cnt').textContent=sel.size+'개 선택됨'; }
+
+// ----- 원본 단어와 유사도 계산 -----
+function getSim(qD, tD) {
+  let score = 0;
+  const minLen = Math.min(qD.length, tD.length);
+  for (let i = 1; i <= minLen; i++) {
+    const q = qD[qD.length - i], t = tD[tD.length - i];
+    if (q[0] === t[0]) score += 1; else if (P_CHO[q[0]] === P_CHO[t[0]]) score += 0.5;
+    if (q[1] === t[1]) score += 2; else if (P_JUNG[q[1]] === P_JUNG[t[1]]) score += 1;
+    if (q[2] === t[2]) score += 1; else if (P_JONG[q[2]] === P_JONG[t[2]]) score += 0.5;
+  }
+  score -= Math.abs(qD.length - tD.length) * 0.5;
+  return score;
+}
+
+// ----- 검색 -----
+function search(){
+  const grid=document.getElementById('grid'), stat=document.getElementById('stat');
+  grid.innerHTML=''; document.getElementById('more').style.display='none';
+  if(!qSyls||!sel.size){ stat.innerHTML=qSyls?'음소를 하나 이상 선택해줘.':''; return; }
+  if(PRON[WORDS.length-1]===undefined){ stat.innerHTML='아직 발음 사전을 만드는 중이야, 잠시 후 다시.'; return; }
+  
+  const qn=qSyls.length;
+  const conds=[...sel].map(k=>{
+    const [i,slot]=k.split(':').map(Number);
+    return [qn-1-i, slot, qSyls[i][slot]]; 
+  });
+  const gm=mode==='x'?null:GROUPS[mode];
+  const qWord=document.getElementById('q').value.trim().split(/\s+/).pop().replace(/[^가-힣]/g,'');
+  const lenLimit = parseInt(document.getElementById('len-limit').value, 10) || 0;
+  const t0=performance.now();
+  results=[];
+  const N=commonOnly?RANKED:WORDS.length;
+  
+  for(let i=0;i<N;i++){
+    const w=WORDS[i];
+    if(w===qWord) continue;
+    if(lenLimit > 0 && w.length !== lenLimit) continue;
+
+    const p=PRON[i];
+    const pl=p.length;
+    let ok=true, exact=0;
+    for(const [off,slot,val] of conds){
+      const pos=pl-1-off;
+      if(pos<0){ ok=false; break; }
+      const c=p.charCodeAt(pos)-0xAC00;
+      const v= slot===0 ? (c/588)|0 : slot===1 ? ((c/28)|0)%21 : c%28;
+      if(v===val){ exact++; continue; }
+      if(!gm || gm[slot][v]!==gm[slot][val]){ ok=false; break; }
+    }
+    if(ok) results.push([exact, i]);
+  }
+
+  for (let j = 0; j < results.length; j++) {
+    const i = results[j][1];
+    const tD = decompose(PRON[i]);
+    const simScore = tD ? getSim(qSyls, tD) : -999;
+    results[j].push(simScore);
+  }
+
+  results.sort((a,b)=> b[0]-a[0] || b[2]-a[2] || a[1]-b[1]);
+  
+  const ms=(performance.now()-t0).toFixed(0);
+  stat.innerHTML=results.length
+    ? '<b>'+results.length.toLocaleString()+'개</b> · '+ms+'ms · 보라색이 조건에 맞은 소리'
+    : '';
+  shown=0;
+  if(!results.length){
+    grid.innerHTML=''; 
+    stat.innerHTML='';
+    document.getElementById('grid').insertAdjacentHTML('beforebegin','');
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1">조건에 맞는 단어가 없어.<br>모드를 「유사 속성」으로 넓히거나 선택 음소를 줄여봐.</div>';
+    return;
+  }
+  render(conds);
+}
+let lastConds=null;
+function render(conds){
+  if(conds) lastConds=conds; else conds=lastConds;
+  const grid=document.getElementById('grid');
+  const end=Math.min(shown+PAGE,results.length);
+  const frag=document.createDocumentFragment();
+  for(let k=shown;k<end;k++){
+    const [ex,i,simScore]=results[k], w=WORDS[i], p=PRON[i];
+    const card=document.createElement('div'); card.className='card'; card.dataset.w=w;
+    const hits={};
+    for(const [off,slot] of conds){ const pos=p.length-1-off; (hits[pos]=hits[pos]||new Set()).add(slot); }
+    let jr='<div class="jrow">';
+    for(let x=0;x<p.length;x++){
+      const s=decompose(p[x])[0];
+      jr+='<div class="jsyl">';
+      for(let slot=0;slot<3;slot++){
+        const hit=hits[x]&&hits[x].has(slot);
+        const ch=SLOTCHAR(s,slot);
+        jr+='<span class="'+(hit?'hit':'')+(ch==='–'?' void':'')+'">'+ch+'</span>';
+      }
+      jr+='</div>';
+    }
+    jr+='</div>';
+    card.innerHTML='<div class="top"><span class="w">'+esc(w)+'</span>'+
+      '<span class="tag">'+(i<RANKED?'자주 씀':'드묾')+'</span></div>'+
+      '<div class="pr">['+esc(p)+']</div>'+jr;
+    frag.appendChild(card);
+  }
+  grid.appendChild(frag);
+  shown=end;
+  document.getElementById('more').style.display= shown<results.length?'block':'none';
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+
+// ----- 이벤트 -----
+document.getElementById('q').addEventListener('input',analyze);
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter'){analyze();search();}});
+document.getElementById('clear').onclick=()=>{document.getElementById('q').value='';analyze();};
+document.getElementById('go').onclick=search;
+
+document.getElementById('modes').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  mode=b.dataset.m;
+  document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));
+  if(results.length||qSyls) search();
+});
+
+document.getElementById('common').addEventListener('change',e=>{commonOnly=e.target.checked; if(qSyls)search();});
+
+const lenInp = document.getElementById('len-limit');
+document.getElementById('len-dec').addEventListener('click', () => {
+  let v = parseInt(lenInp.value, 10) || 0;
+  if (v > 0) { lenInp.value = v - 1; if(qSyls) search(); }
+});
+document.getElementById('len-inc').addEventListener('click', () => {
+  let v = parseInt(lenInp.value, 10) || 0;
+  lenInp.value = v + 1;
+  if(qSyls) search();
+});
+lenInp.addEventListener('input', () => {
+  let v = parseInt(lenInp.value, 10) || 0;
+  if (v < 0) lenInp.value = 0;
+  if(qSyls) search();
+});
+
+document.getElementById('more').onclick=()=>render();
+
+// 카드 클릭 이벤트 (복사 및 툴팁)
+document.getElementById('grid').addEventListener('click',e=>{
+  const c=e.target.closest('.card'); if(!c)return;
+  const w=c.dataset.w;
+  
+  (navigator.clipboard?navigator.clipboard.writeText(w):Promise.reject()).then(()=>{
+    const t=document.getElementById('toast');
+    t.textContent='「'+w+'」 복사됨'; t.classList.add('show');
+    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1200);
+  }).catch(()=>{});
+
+  let tip = c.querySelector('.card-tip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.className = 'card-tip';
+    const meaning = (window.RHYME_DATA.meanings && window.RHYME_DATA.meanings[w]) 
+                  ? window.RHYME_DATA.meanings[w] 
+                  : '단어 설명이 없습니다.';
+    tip.textContent = meaning;
+    c.appendChild(tip);
+  }
+  
+  document.querySelectorAll('.card-tip.show').forEach(el => {
+    if (el !== tip) el.classList.remove('show');
+  });
+
+  tip.classList.add('show');
+  
+  // 모바일 등에서 영원히 남아있는 것을 방지 (마우스가 떠나거나 2.5초 뒤 제거)
+  clearTimeout(c._tipTimer);
+  const hideTip = () => tip.classList.remove('show');
+  c.addEventListener('mouseleave', hideTip, { once: true });
+  c._tipTimer = setTimeout(hideTip, 2500); 
+});
+</script>
+</body>
+</html>
