@@ -3,193 +3,299 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>라임 검색기</title>
+<meta name="description" content="발음 기준으로 라임(운율)이 맞는 한국어 단어를 찾아주는 검색기">
+<title>라임 검색기 — 소리로 찾는 한국어 라임</title>
+<meta name="theme-color" content="#65a30d">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect x='4' y='4' width='112' height='112' rx='28' fill='%2322c55e'/><circle cx='60' cy='60' r='36' fill='%23d9f99d'/><g stroke='%2315290a' stroke-width='7' stroke-linecap='round'><line x1='60' y1='32' x2='60' y2='88'/><line x1='36' y1='46' x2='84' y2='74'/><line x1='36' y1='74' x2='84' y2='46'/></g><circle cx='60' cy='60' r='8' fill='%2315290a'/></svg>">
 <style>
+/* ===== 디자인 토큰 ===== */
 :root{
-  --bg:#f5f6fa; --card:#fff; --line:#e6e8f0; --ink:#1f2430; --dim:#8a90a6;
-  --pri:#7c3aed; --pri-soft:#f1eaff; --pri-line:#d9c8ff;
+  --bg:#f4f7ee; --bg2:#ebf0e0; --card:#ffffff; --line:#e2e8d6; --line2:#cfdabd;
+  --ink:#1a2213; --dim:#78846a; --faint:#a7b294;
+  --pri:#65a30d; --pri-strong:#4d7c0f; --pri-ink:#4d7c0f;
+  --pri-soft:#eef7db; --pri-line:#c9e29b;
+  --hit:#4d7c0f; --hit-ink:#ffffff;
+  --grad:linear-gradient(135deg,#a3e635,#22c55e);
+  --grad-ink:#15290a; --glow:rgba(101,163,13,.35);
+  --ok:#0d9488; --shadow:0 1px 2px rgba(26,34,19,.04),0 4px 16px rgba(26,34,19,.05);
+  --shadow-lg:0 4px 12px rgba(26,34,19,.06),0 12px 40px rgba(26,34,19,.10);
+  --r-lg:18px; --r-md:12px; --r-sm:9px;
+}
+:root[data-theme="dark"]{
+  --bg:#0d110a; --bg2:#12170e; --card:#161c11; --line:#242d19; --line2:#324024;
+  --ink:#e9f0dd; --dim:#94a183; --faint:#5c6a4c;
+  --pri:#84cc16; --pri-strong:#a3e635; --pri-ink:#a3e635;
+  --pri-soft:#1d2911; --pri-line:#3e5321;
+  --hit:#a3e635; --hit-ink:#16210b;
+  --grad:linear-gradient(135deg,#a3e635,#4ade80);
+  --grad-ink:#132408; --glow:rgba(163,230,53,.22);
+  --ok:#2dd4bf; --shadow:0 1px 2px rgba(0,0,0,.25),0 4px 16px rgba(0,0,0,.25);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.3),0 12px 40px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--ink);
-  font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
-  min-height:100vh}
-.wrap{max-width:860px;margin:0 auto;padding:26px 16px 90px}
-header{text-align:center;margin-bottom:18px}
-h1{font-size:22px;font-weight:800;display:inline-flex;align-items:center;gap:8px}
-h1 .kr{background:var(--pri);color:#fff;font-size:13px;padding:3px 7px;border-radius:7px;letter-spacing:.05em}
-.sub{color:var(--dim);font-size:12px;margin-top:6px}
-.sub b{color:var(--pri);font-weight:600}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
+    'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic','Segoe UI',sans-serif;
+  min-height:100vh;line-height:1.5;
+  transition:background .25s,color .25s;
+}
+button{font-family:inherit;color:inherit}
+::selection{background:#bef264;color:#1a2e05}
 
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
-  padding:18px;box-shadow:0 1px 3px rgba(30,35,60,.05)}
-.cols{display:flex;gap:20px;flex-wrap:wrap}
-.col-in{flex:1 1 240px;min-width:220px}
-.col-ph{flex:1.4 1 300px;min-width:260px}
-.lab{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--dim);margin-bottom:8px;
-  display:flex;justify-content:space-between;align-items:center}
-.lab .cnt{background:var(--pri-soft);color:var(--pri);border-radius:999px;padding:2px 9px;font-size:10px}
+.wrap{max-width:920px;margin:0 auto;padding:28px 18px 110px}
+
+/* ===== 헤더 ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;gap:12px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;
+  background:var(--grad);color:var(--grad-ink);
+  font-weight:800;font-size:17px;letter-spacing:-.02em;box-shadow:0 4px 14px var(--glow)}
+.brand h1{font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.brand .tg{font-size:12px;color:var(--dim);margin-top:1px}
+.brand .tg b{color:var(--pri-ink);font-weight:700}
+.tools{display:flex;gap:8px;flex:none}
+.icon-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--card);
+  cursor:pointer;display:grid;place-items:center;font-size:16px;color:var(--dim);
+  transition:border-color .15s,color .15s}
+.icon-btn:hover{border-color:var(--pri);color:var(--pri-ink)}
+.meta{font-size:11px;color:var(--faint);text-align:right}
+
+/* ===== 검색 패널 ===== */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:22px;box-shadow:var(--shadow)}
+.cols{display:flex;gap:24px;flex-wrap:wrap}
+.col-in{flex:1 1 250px;min-width:230px}
+.col-ph{flex:1.5 1 320px;min-width:270px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--dim);margin-bottom:9px;
+  display:flex;justify-content:space-between;align-items:center;text-transform:uppercase}
+.lab .cnt{background:var(--pri-soft);color:var(--pri-ink);border-radius:999px;padding:2px 10px;
+  font-size:11px;letter-spacing:0;font-weight:700;transition:transform .15s}
+.lab .cnt.bump{transform:scale(1.12)}
+
 .inbox{position:relative}
-#q{width:100%;border:1.5px solid var(--line);border-radius:10px;background:#fff;
-  font-size:19px;padding:11px 36px 11px 13px;outline:0;font-family:inherit;color:var(--ink)}
-#q:focus{border-color:var(--pri)}
+#q{width:100%;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--bg);
+  font-size:20px;font-weight:600;padding:13px 42px 13px 15px;outline:0;font-family:inherit;
+  color:var(--ink);transition:border-color .15s,background .15s,box-shadow .15s}
+#q::placeholder{color:var(--faint);font-weight:400}
+#q:focus{border-color:var(--pri);background:var(--card);box-shadow:0 0 0 3px var(--pri-soft)}
+#q::-webkit-search-cancel-button{display:none}
 #clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;
-  color:var(--dim);font-size:16px;cursor:pointer;padding:4px;display:none}
-.pron{margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;
-  padding:9px 12px;font-size:12px;color:var(--dim)}
-.pron b{display:block;font-size:17px;color:var(--ink);margin-top:2px;font-weight:700}
+  color:var(--faint);font-size:15px;cursor:pointer;padding:6px 8px;display:none;border-radius:8px}
+#clear:hover{color:var(--ink)}
 
-#syls{display:flex;gap:8px;flex-wrap:wrap;min-height:96px;align-items:flex-start}
-.syl{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;min-width:52px}
-.syl .head{font-size:16px;font-weight:700;text-align:center;padding:5px 4px;background:var(--bg);
-  border-bottom:1px solid var(--line)}
-.syl button{display:flex;justify-content:space-between;gap:8px;width:100%;border:0;background:none;
-  font-family:inherit;font-size:12px;padding:5px 8px;cursor:pointer;color:var(--dim)}
+.pron{margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:10px 14px;font-size:11px;color:var(--dim);letter-spacing:.06em;font-weight:600}
+.pron b{display:block;font-size:19px;color:var(--ink);margin-top:3px;font-weight:700;letter-spacing:0}
+.pron b .from{font-size:12px;color:var(--faint);font-weight:500;margin-left:6px}
+
+/* 프리셋 */
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.presets button{border:1px solid var(--line);background:var(--card);border-radius:999px;
+  font-size:11.5px;padding:5px 11px;cursor:pointer;color:var(--dim);font-weight:600;
+  transition:all .13s}
+.presets button:hover{border-color:var(--pri);color:var(--pri-ink);background:var(--pri-soft)}
+.presets button:disabled{opacity:.4;cursor:default;pointer-events:none}
+
+/* 음절 셀렉터 */
+#syls{display:flex;gap:9px;flex-wrap:wrap;min-height:104px;align-items:flex-start}
+.syl{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--card);
+  min-width:58px;box-shadow:0 1px 2px rgba(23,27,38,.03)}
+.syl .head{font-size:17px;font-weight:800;text-align:center;padding:6px 4px;background:var(--bg);
+  border-bottom:1px solid var(--line);cursor:pointer;user-select:none;transition:background .13s,color .13s}
+.syl .head:hover{color:var(--pri-ink)}
+.syl button{display:flex;justify-content:space-between;gap:10px;width:100%;border:0;background:none;
+  font-size:12px;padding:6px 9px;cursor:pointer;color:var(--dim);transition:background .12s}
 .syl button+button{border-top:1px dashed var(--line)}
-.syl button .g{font-size:9px;letter-spacing:.05em;align-self:center}
-.syl button .p{font-size:13px;color:var(--ink);font-weight:600}
-.syl button.on{background:var(--pri);}
-.syl button.on .g{color:var(--pri-line)}
-.syl button.on .p{color:#fff}
-.hint{color:var(--dim);font-size:12px;padding:20px 4px}
+.syl button .g{font-size:9px;letter-spacing:.06em;align-self:center;color:var(--faint)}
+.syl button .p{font-size:14px;color:var(--ink);font-weight:700}
+.syl button:hover{background:var(--pri-soft)}
+.syl button.on{background:var(--hit)}
+.syl button.on:hover{background:var(--hit);filter:brightness(1.08)}
+.syl button.on .g{color:var(--hit-ink);opacity:.65}
+.syl button.on .p{color:var(--hit-ink)}
+.hint{color:var(--faint);font-size:12.5px;padding:24px 6px;line-height:1.9}
+.hint .kbd{display:inline-block;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;
+  padding:0 6px;font-size:11px;color:var(--dim);background:var(--bg)}
 
-/* 모드 버튼 및 툴팁 (구조 개선) */
-.modes{display:flex;justify-content:center;gap:6px;margin:18px 0 12px;flex-wrap:wrap}
-.mode-wrap{position:relative;display:inline-flex;}
-.modes button{border:1px solid var(--line);background:#fff;border-radius:999px;color:var(--dim);
-  font-size:13px;padding:8px 16px;cursor:pointer;font-family:inherit}
-.modes button.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri);font-weight:700}
-.mode-tip{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  background:rgba(31,36,48,0.95);color:#fff;padding:12px;border-radius:8px;font-size:11px;
-  width:260px;text-align:left;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.15);
-  pointer-events:none;font-weight:normal;line-height:1.45;word-break:keep-all;}
-.mode-wrap:hover .mode-tip{display:block;}
-.mode-tip strong{display:block;color:var(--pri-line);margin-bottom:6px;font-size:12px;font-weight:700;}
-.mode-tip .line{display:block;height:1px;background:rgba(255,255,255,0.2);margin:8px 0;}
-.mode-tip .d{color:rgba(255,255,255,0.7);font-size:10px;line-height:1.6;}
+/* ===== 모드 & 검색 ===== */
+.modes{display:flex;justify-content:center;gap:0;margin:20px auto 6px;flex-wrap:nowrap;
+  background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px;width:fit-content;max-width:100%}
+.modes button{border:0;background:none;border-radius:999px;color:var(--dim);
+  font-size:13px;padding:8px 18px;cursor:pointer;font-weight:600;white-space:nowrap;
+  transition:all .15s}
+.modes button.on{background:var(--card);color:var(--pri-ink);font-weight:700;
+  box-shadow:0 1px 4px rgba(23,27,38,.10)}
+.mode-desc{text-align:center;font-size:11.5px;color:var(--faint);margin-bottom:14px;min-height:17px}
 
-#go{display:block;width:100%;border:0;background:var(--pri);color:#fff;font-size:16px;font-weight:700;
-  border-radius:12px;padding:14px;cursor:pointer;font-family:inherit}
-#go:active{opacity:.85}
+/* 모드 툴팁 */
+#mtip{position:fixed;z-index:20;max-width:340px;background:var(--card);border:1px solid var(--line2);
+  border-radius:12px;padding:12px 14px;box-shadow:var(--shadow-lg);font-size:12px;color:var(--dim);
+  opacity:0;pointer-events:none;transform:translateY(4px);transition:opacity .15s,transform .15s}
+#mtip.show{opacity:1;transform:none}
+#mtip .t-sum{font-size:12.5px;color:var(--ink);line-height:1.55;font-weight:600}
+#mtip .t-sum b{color:var(--pri-ink)}
+#mtip .t-det{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);
+  display:flex;flex-direction:column;gap:6px}
+#mtip .t-row{display:flex;gap:7px;align-items:flex-start}
+#mtip .t-k{flex:none;font-size:10px;font-weight:700;color:var(--pri-ink);background:var(--pri-soft);
+  border-radius:5px;padding:2px 6px;margin-top:1px}
+#mtip .t-gs{display:flex;flex-wrap:wrap;gap:4px}
+#mtip .t-gs i{font-style:normal;background:var(--bg);border:1px solid var(--line);border-radius:5px;
+  padding:1.5px 6px;font-size:11px;color:var(--ink);letter-spacing:.02em;line-height:1.5}
+#mtip .t-note{margin-top:8px;font-size:10.5px;color:var(--faint);line-height:1.5}
 
-.opts{display:flex;justify-content:center;gap:16px;margin-top:10px}
-label.tog{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px;cursor:pointer;user-select:none}
-label.tog input[type="checkbox"]{accent-color:var(--pri)}
-.num-wrap {display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:6px; background:#fff; overflow:hidden; height:26px;}
-.num-wrap button {border:0; background:none; color:var(--dim); font-size:10px; width:26px; height:100%; cursor:pointer; display:flex; align-items:center; justify-content:center;}
-.num-wrap button:hover {background:var(--bg); color:var(--pri);}
-.num-wrap input {width:34px; border:0; text-align:center; font-size:13px; font-weight:600; color:var(--ink); outline:none; font-family:inherit; -moz-appearance:textfield; background:transparent;}
-.num-wrap input::-webkit-outer-spin-button, .num-wrap input::-webkit-inner-spin-button {-webkit-appearance:none; margin:0;}
+#go{display:block;width:100%;border:0;background:var(--grad);
+  color:var(--grad-ink);font-size:16px;font-weight:800;letter-spacing:.02em;
+  border-radius:var(--r-md);padding:15px;cursor:pointer;
+  box-shadow:0 4px 14px var(--glow);transition:transform .1s,box-shadow .15s,opacity .15s}
+#go:hover{box-shadow:0 6px 20px var(--glow)}
+#go:active{transform:scale(.985)}
 
-#stat{margin:22px 4px 10px;font-size:13px;color:var(--dim)}
-#stat b{color:var(--pri)}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.opts{display:flex;justify-content:center;gap:22px;margin-top:14px;flex-wrap:wrap}
+label.tog{display:flex;align-items:center;gap:7px;color:var(--dim);font-size:12.5px;cursor:pointer;
+  user-select:none;font-weight:500}
+label.tog input[type="checkbox"]{accent-color:var(--pri);width:15px;height:15px;cursor:pointer}
+.num-wrap{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;
+  background:var(--card);overflow:hidden;height:28px}
+.num-wrap button{border:0;background:none;color:var(--dim);font-size:11px;width:28px;height:100%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.num-wrap button:hover{background:var(--pri-soft);color:var(--pri-ink)}
+.num-wrap input{width:36px;border:0;text-align:center;font-size:13px;font-weight:700;color:var(--ink);
+  outline:none;font-family:inherit;-moz-appearance:textfield;background:transparent}
+.num-wrap input::-webkit-outer-spin-button,.num-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-/* 단어 상자 및 클릭 툴팁 */
-.card{position:relative;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 11px;cursor:pointer}
-.card:active{border-color:var(--pri)}
+/* ===== 결과 ===== */
+#stat{margin:26px 4px 12px;font-size:13px;color:var(--dim);display:flex;align-items:center;
+  justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:20px}
+#stat b{color:var(--pri-ink);font-weight:800}
+.legend{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--faint)}
+.legend i{width:12px;height:12px;border-radius:4px;background:var(--hit);display:inline-block}
+
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(156px,1fr));gap:11px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;
+  cursor:pointer;transition:border-color .13s,transform .13s,box-shadow .13s;
+  animation:rise .3s cubic-bezier(.2,.7,.3,1) both}
+.card:hover{border-color:var(--pri-line);transform:translateY(-2px);box-shadow:var(--shadow)}
+.card:active{transform:translateY(0);border-color:var(--pri)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-.card .w{font-size:16px;font-weight:700}
-.card .tag{font-size:9px;color:var(--dim);white-space:nowrap}
-.card .pr{font-size:11px;color:var(--dim);margin-top:1px;min-height:14px}
-.card-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  background:rgba(124,58,237,0.95);color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;
-  white-space:nowrap;z-index:10;box-shadow:0 2px 8px rgba(124,58,237,0.3);pointer-events:none;font-weight:500;}
-.card-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
-  border-width:5px;border-style:solid;border-color:rgba(124,58,237,0.95) transparent transparent transparent;}
-.card-tip.show{display:block;animation:popIn 0.2s cubic-bezier(0.18,0.89,0.32,1.28) forwards;}
-@keyframes popIn{from{opacity:0;transform:translate(-50%, 4px) scale(0.95)}to{opacity:1;transform:translate(-50%, 0) scale(1)}}
-
-.jrow{display:flex;gap:4px;margin-top:8px;justify-content:center}
+.card .w{font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+.card .tag{font-size:9px;white-space:nowrap;border-radius:5px;padding:2px 6px;font-weight:700}
+.card .tag.c{background:var(--pri-soft);color:var(--pri-ink)}
+.card .tag.r{background:var(--bg);color:var(--faint)}
+.card .pr{font-size:11px;color:var(--dim);margin-top:2px;min-height:15px}
+.jrow{display:flex;gap:4px;margin-top:9px;justify-content:center}
 .jsyl{display:flex;flex-direction:column;gap:2px}
-.jsyl span{font-size:10px;line-height:1;color:var(--dim);text-align:center;padding:3px 5px;
-  border-radius:4px;background:var(--bg);min-width:20px}
-.jsyl span.hit{background:var(--pri);color:#fff;font-weight:700}
-.jsyl span.void{opacity:.35}
-#more{display:none;margin:16px auto 0;background:#fff;border:1px solid var(--line);
-  border-radius:10px;color:var(--dim);font-size:13px;padding:10px 26px;cursor:pointer;font-family:inherit}
-.empty{color:var(--dim);font-size:13px;padding:24px 4px;text-align:center;line-height:1.8}
-#loading{position:fixed;inset:0;background:rgba(245,246,250,.92);display:flex;flex-direction:column;
-  gap:10px;align-items:center;justify-content:center;font-size:13px;color:var(--dim);z-index:9}
-#loading .bar{width:200px;height:5px;border-radius:99px;background:var(--line);overflow:hidden}
-#loading .bar i{display:block;height:100%;width:0%;background:var(--pri);transition:width .15s}
-#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--pri);color:#fff;
-  font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;
-  transition:opacity .18s}
-#toast.show{opacity:1}
-@media (prefers-reduced-motion:reduce){#toast,#loading .bar i, .card-tip.show{transition:none;animation:none}}
+.jsyl span{font-size:10px;line-height:1;color:var(--dim);text-align:center;padding:3.5px 5px;
+  border-radius:5px;background:var(--bg);min-width:21px}
+.jsyl span.hit{background:var(--hit);color:var(--hit-ink);font-weight:700}
+.jsyl span.void{opacity:.3}
+
+#more{display:none;margin:18px auto 0;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;color:var(--dim);font-size:13px;font-weight:600;padding:11px 30px;cursor:pointer;
+  transition:border-color .15s,color .15s}
+#more:hover{border-color:var(--pri);color:var(--pri-ink)}
+
+.empty{color:var(--dim);font-size:13.5px;padding:44px 16px;text-align:center;line-height:2;
+  grid-column:1/-1}
+.empty .big{font-size:34px;display:block;margin-bottom:8px;filter:grayscale(.2)}
+
+/* ===== 로딩 ===== */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+  gap:16px;align-items:center;justify-content:center;font-size:13px;color:var(--dim);z-index:9;
+  transition:opacity .3s}
+#loading.out{opacity:0;pointer-events:none}
+#loading .logo{width:52px;height:52px;border-radius:16px;font-size:22px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+#loading .bar{width:220px;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+#loading .bar i{display:block;height:100%;width:0%;border-radius:99px;
+  background:var(--grad);transition:width .15s}
+#lpct{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* ===== 토스트 ===== */
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:var(--bg);font-size:13px;font-weight:700;padding:10px 20px;
+  border-radius:999px;opacity:0;pointer-events:none;box-shadow:var(--shadow-lg);
+  transition:opacity .18s,transform .18s;z-index:10}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{margin-top:56px;text-align:center;font-size:11px;color:var(--faint);line-height:1.9}
+footer a{color:var(--dim)}
+
+@media (max-width:560px){
+  .wrap{padding:18px 12px 90px}
+  .panel{padding:16px}
+  .cols{gap:18px}
+  .modes button{padding:8px 13px;font-size:12px}
+  #grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .brand h1{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header>
-  <h1><span class="kr">KR</span>라임 검색기</h1>
-  <div class="sub">모든 표시는 <b>소리(발음)</b> 기준입니다 — 표기가 아니라 발음으로 찾아요</div>
-</header>
 
+<div class="topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"><circle cx="24" cy="24" r="17"/><line x1="24" y1="9" x2="24" y2="39"/><line x1="11" y1="16.5" x2="37" y2="31.5"/><line x1="11" y1="31.5" x2="37" y2="16.5"/></svg></div>
+    <div>
+      <h1>라임 검색기</h1>
+      <div class="tg">표기가 아닌 <b>소리(발음)</b>로 찾는 한국어 라임</div>
+    </div>
+  </div>
+  <div class="tools">
+    <button class="icon-btn" id="theme" title="테마 전환" aria-label="다크/라이트 테마 전환">◐</button>
+  </div>
+</div>
 
 <div class="panel">
   <div class="cols">
     <div class="col-in">
       <div class="lab"><span>단어 입력 (표기)</span></div>
       <div class="inbox">
-        <input id="q" type="search" placeholder="타겟 입력" autocomplete="off" autofocus>
-        <button id="clear" aria-label="지우기">✕</button>
+        <input id="q" type="search" placeholder="예: 사랑, 불꽃놀이" autocomplete="off"
+               autofocus enterkeyhint="search" aria-label="라임을 찾을 단어 입력">
+        <button id="clear" aria-label="입력 지우기">✕</button>
       </div>
       <div class="pron">분석한 발음<b id="pron">—</b></div>
     </div>
     <div class="col-ph">
-      <div class="lab"><span>검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택됨</span></div>
-      <div id="syls"><div class="hint">단어를 입력하면 음절이 나타나요.<br>초성·중성·종성을 탭해서 검색 조건을 고르세요.</div></div>
-    </div>
-  </div>
-  
-  <div class="modes" id="modes">
-    <div class="mode-wrap">
-      <button data-m="x">완전 일치</button>
-      <div class="mode-tip">
-        <strong>완전 일치</strong>
-        선택한 음소와 정확히 일치하는 단어만 찾습니다.
+      <div class="lab"><span>검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택</span></div>
+      <div class="presets" id="presets">
+        <button data-p="rhyme" disabled>끝 모음+받침</button>
+        <button data-p="last" disabled>끝 음절 전체</button>
+        <button data-p="vowel2" disabled>끝 2음절 모음</button>
+        <button data-p="none" disabled>모두 해제</button>
       </div>
-    </div>
-    <div class="mode-wrap">
-      <button data-m="p" class="on">≈ 유사 음소</button>
-      <div class="mode-tip">
-        <strong>유사 음소 (기본)</strong>
-        발음이 비슷한 음소끼리 그룹화하여 매칭합니다.
-        <div class="line"></div>
-        <div class="d">
-          [초성] ㄱㄲㅋ / ㄷㄸㅌ / ㅂㅃㅍ / ㅅㅆ / ㅈㅉㅊ / ㄴㅁㄹㅇㅎ<br>
-          [중성] ㅏㅑㅘ / ㅐㅔㅒㅖㅙㅞㅚ / ㅓㅕㅝ / ㅗㅛ / ㅜㅠㅡ / ㅣㅢㅟ<br>
-          [종성] ㄴㅁㅇ... / ㄹ... / ㄱ... / ㅂ... / ㄷ...
-        </div>
-      </div>
-    </div>
-    <div class="mode-wrap">
-      <button data-m="f">♪ 유사 속성</button>
-      <div class="mode-tip">
-        <strong>유사 속성 (광범위)</strong>
-        더 넓은 범위의 조음 위치와 방식으로 묶어 매칭합니다.
-        <div class="line"></div>
-        <div class="d">
-          [초성] ㄱ~ㅍ(파열) / ㅅ~ㅊ(마찰·파찰) / ㄴ~ㅎ(비·유음)<br>
-          [중성] 유사 음소 모드와 동일<br>
-          [종성] 울림소리(ㄴㄹㅁㅇ) / 안울림소리(ㄱㄷㅂ)
-        </div>
-      </div>
+      <div id="syls"><div class="hint">단어를 입력하면 음절이 나타나요.<br>
+        초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>
+        음절 글자를 누르면 그 음절 전체가 토글돼요.</div></div>
     </div>
   </div>
 
-  <button id="go">검색</button>
+  <div class="modes" id="modes" role="tablist" aria-label="일치 모드">
+    <button data-m="x" data-d="선택한 음소가 발음까지 정확히 같은 단어만 찾아요">완전 일치</button>
+    <button data-m="p" class="on" data-d="ㄱ≈ㅋ, ㅐ≈ㅔ처럼 비슷하게 들리는 음소까지 허용해요">≈ 유사 음소</button>
+    <button data-m="f" data-d="울림소리·막힘소리 같은 소리 성질이 같으면 넓게 허용해요">♪ 유사 속성</button>
+  </div>
+  <div class="mode-desc" id="mode-desc">ㄱ≈ㅋ, ㅐ≈ㅔ처럼 비슷하게 들리는 음소까지 허용해요</div>
+
+  <button id="go">라임 검색</button>
+
   <div class="opts">
     <label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만</label>
-    <label class="tog" title="0은 제한 없음을 의미합니다.">
-      글자수:
-      <div class="num-wrap">
-        <button type="button" id="len-dec">◀</button>
-        <input type="number" id="len-limit" value="0" min="0">
-        <button type="button" id="len-inc">▶</button>
-      </div>
+    <label class="tog" title="0은 제한 없음">
+      글자수
+      <span class="num-wrap">
+        <button type="button" id="len-dec" aria-label="글자수 줄이기">−</button>
+        <input type="number" id="len-limit" value="0" min="0" aria-label="글자수 제한 (0은 제한 없음)">
+        <button type="button" id="len-inc" aria-label="글자수 늘리기">＋</button>
+      </span>
     </label>
   </div>
 </div>
@@ -197,18 +303,39 @@ label.tog input[type="checkbox"]{accent-color:var(--pri)}
 <div id="stat"></div>
 <div id="grid"></div>
 <button id="more">더 보기</button>
+
+<footer id="foot"></footer>
 </div>
 
-<div id="loading"><div>사전 27만 단어의 발음을 계산하는 중…</div><div class="bar"><i id="lbar"></i></div></div>
-<div id="toast"></div>
+<div id="loading">
+  <div class="logo"><svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"><circle cx="24" cy="24" r="17"/><line x1="24" y1="9" x2="24" y2="39"/><line x1="11" y1="16.5" x2="37" y2="31.5"/><line x1="11" y1="31.5" x2="37" y2="16.5"/></svg></div>
+  <div>사전 27만 단어의 발음을 계산하고 있어요…</div>
+  <div class="bar"><i id="lbar"></i></div>
+  <div id="lpct">0%</div>
+</div>
+<div id="mtip" role="tooltip" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script src="./단어데이터.js" onerror="window.__DATA_MISSING=1"></script>
 <script>
 'use strict';
+// ===== 테마 =====
+(function(){
+  const saved=localStorage.getItem('rhyme-theme');
+  const dark=saved?saved==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+  if(dark)document.documentElement.dataset.theme='dark';
+  document.getElementById('theme').onclick=()=>{
+    const d=document.documentElement.dataset.theme==='dark';
+    document.documentElement.dataset.theme=d?'':'dark';
+    localStorage.setItem('rhyme-theme',d?'light':'dark');
+  };
+})();
+
 // ===== 한국어 표준발음 근사 엔진 =====
+// 음절 = [초성idx, 중성idx, 종성idx(0=없음)]
 const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
 const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
-const JONG = '\u0000ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+const JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
 const cI = {}, jI = {}, gI = {};
 [...CHO].forEach((c, i) => cI[c] = i);
 [...JUNG].forEach((c, i) => jI[c] = i);
@@ -242,6 +369,7 @@ function compose(syls) {
   return syls.map(s => String.fromCharCode(0xAC00 + s[0] * 588 + s[1] * 28 + s[2])).join('');
 }
 
+// ===== ㄴ첨가 (합성어 경계 — 휴리스틱+예외) =====
 const N_SUFFIX = ['잎', '여름', '이불', '이빨'];
 const EXC = {
   '담요': '담뇨', '알약': '알략', '물약': '물략', '눈약': '눈냑', '안약': '안냑',
@@ -255,9 +383,9 @@ const EXC = {
 const I_VOWELS = ['ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'].map(v => jI[v]);
 function nInsert(s, word) {
   for (let i = 0; i + 1 < s.length; i++) {
-    if (!s[i][2]) continue;                    
+    if (!s[i][2]) continue;
     const nx = s[i + 1];
-    if (nx[0] !== cI['ㅇ']) continue;          
+    if (nx[0] !== cI['ㅇ']) continue;
     const rest = word.slice(i + 1);
     const [j1] = splitJong(s[i][2]);
     const isSiot = (j1 === 'ㅅ' || j1 === 'ㅆ');
@@ -269,28 +397,28 @@ function nInsert(s, word) {
 }
 
 function pronounce(src) {
-  const s = src.map(x => x.slice()); 
+  const s = src.map(x => x.slice());
   const n = s.length;
   for (let i = 0; i < n; i++) {
-    let [j1, j2] = splitJong(s[i][2]); 
+    let [j1, j2] = splitJong(s[i][2]);
     const next = i + 1 < n ? s[i + 1] : null;
     const nc = next ? CHO[next[0]] : null;
 
-    if (!next) { 
+    if (!next) {
       let f = j2 ? pickDouble(j1, j2) : j1;
       s[i][2] = f ? gI[rep(f)] : 0;
       break;
     }
 
-    if (nc === 'ㅇ') { 
-      if (j2) { 
-        if (j2 === 'ㅎ') { next[0] = cI[j1]; s[i][2] = 0; } 
+    if (nc === 'ㅇ') {
+      if (j2) {
+        if (j2 === 'ㅎ') { next[0] = cI[j1]; s[i][2] = 0; }
         else {
           s[i][2] = gI[j1];
           next[0] = cI[j2 === 'ㅅ' ? 'ㅆ' : j2];
         }
-      } else if (j1 === 'ㅎ') { s[i][2] = 0; } 
-      else if (j1 && j1 !== 'ㅇ') { 
+      } else if (j1 === 'ㅎ') { s[i][2] = 0; }
+      else if (j1 && j1 !== 'ㅇ') {
         let lc = j1;
         if (next[1] === jI['ㅣ']) { if (lc === 'ㄷ') lc = 'ㅈ'; else if (lc === 'ㅌ') lc = 'ㅊ'; }
         next[0] = cI[lc];
@@ -312,7 +440,7 @@ function pronounce(src) {
       s[i][2] = 0;
       continue;
     }
-    let jong = f; 
+    let jong = f;
     let cho = nc;
 
     if (jong) {
@@ -334,11 +462,11 @@ function pronounce(src) {
 }
 function pickDouble(a, b) {
   const d = a + b;
-  if (d === 'ㄹㄱ') return 'ㄱ'; 
-  if (d === 'ㄹㅁ') return 'ㅁ'; 
-  if (d === 'ㄹㅍ') return 'ㅂ'; 
-  if (b === 'ㅎ') return a;      
-  return a; 
+  if (d === 'ㄹㄱ') return 'ㄱ';
+  if (d === 'ㄹㅁ') return 'ㅁ';
+  if (d === 'ㄹㅍ') return 'ㅂ';
+  if (b === 'ㅎ') return a;
+  return a;
 }
 
 function g2p(word) {
@@ -349,11 +477,11 @@ function g2p(word) {
   return compose(pronounce(d));
 }
 
-
 // ===== 앱 =====
 if(window.__DATA_MISSING||!window.RHYME_DATA){
   document.getElementById('loading').innerHTML=
-    '<div style="max-width:340px;text-align:center;line-height:1.8">'+
+    '<div style="max-width:340px;text-align:center;line-height:1.9">'+
+    '<div style="font-size:34px;margin-bottom:10px">📂</div>'+
     '<b>단어데이터.js 파일을 찾을 수 없어요.</b><br>'+
     '「단어데이터.js」를 이 HTML 파일과 <u>같은 폴더</u>에 두고 새로고침해 주세요.</div>';
   throw new Error('no data');
@@ -362,6 +490,7 @@ const RANKED=window.RHYME_DATA.ranked;
 const WORDS=window.RHYME_DATA.words.split(' ');
 Object.assign(EXC, window.RHYME_DATA.exc||{});
 const PRON=new Array(WORDS.length);
+let READY=false;
 
 // ----- 유사도 그룹 -----
 function groupMap(groups, alphabet){
@@ -374,9 +503,9 @@ function groupMap(groups, alphabet){
 const P_CHO=groupMap(['ㄱㄲㅋ','ㄷㄸㅌ','ㅂㅃㅍ','ㅅㅆ','ㅈㅉㅊ','ㄴㅁㄹㅇㅎ'],CHO);
 const P_JUNG=groupMap(['ㅏㅑㅘ','ㅐㅔㅒㅖㅙㅞㅚ','ㅓㅕㅝ','ㅗㅛ','ㅜㅠㅡ','ㅣㅢㅟ'],JUNG);
 const P_JONG=groupMap(['ㄴㅁㅇㄵㄶㄻ','ㄹㄼㄽㄾㅀ','ㄱㅋㄲㄳㄺ','ㅂㅍㅄㄿ','ㄷㅌㅅㅆㅈㅊㅎ'],JONG);
-const F_CHO=groupMap(['ㄱㄲㅋㄷㄸㅌㅂㅃㅍ','ㅅㅆㅈㅉㅊ','ㄴㄹㅁㅇㅎ'],CHO); 
+const F_CHO=groupMap(['ㄱㄲㅋㄷㄸㅌㅂㅃㅍ','ㅅㅆㅈㅉㅊ','ㄴㄹㅁㅇㅎ'],CHO);
 const F_JUNG=P_JUNG;
-const F_JONG=groupMap(['ㄴㄹㅁㅇㄵㄶㄻㄼㄽㄾㅀ','ㄱㄲㄳㄺㄷㅅㅆㅈㅊㅋㅌㅎㅂㅍㅄㄿ'],JONG); 
+const F_JONG=groupMap(['ㄴㄹㅁㅇㄵㄶㄻㄼㄽㄾㅀ','ㄱㄲㄳㄺㄷㅅㅆㅈㅊㅋㅌㅎㅂㅍㅄㄿ'],JONG);
 const GROUPS={p:[P_CHO,P_JUNG,P_JONG],f:[F_CHO,F_JUNG,F_JONG]};
 const SLOTNAME=['초성','중성','종성'];
 const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[s[2]]:'–');
@@ -387,38 +516,48 @@ const PAGE=60;
 
 // ----- 발음 사전 구축 (청크 처리) -----
 (function build(){
-  const bar=document.getElementById('lbar');
+  const bar=document.getElementById('lbar'), pct=document.getElementById('lpct');
   let i=0;
   function chunk(){
     const end=Math.min(i+20000,WORDS.length);
-    for(;i<end;i++){ const w=WORDS[i]; const p=g2p(w); PRON[i]=p; }
-    bar.style.width=(i/WORDS.length*100)+'%';
+    for(;i<end;i++){ PRON[i]=g2p(WORDS[i]); }
+    const p=i/WORDS.length*100;
+    bar.style.width=p+'%'; pct.textContent=p.toFixed(0)+'%';
     if(i<WORDS.length) setTimeout(chunk,0);
-    else{ document.getElementById('loading').remove();
-      const s=document.createElement('div');
-      s.style.cssText='text-align:center;color:var(--dim);font-size:11px;margin-top:6px';
-      s.textContent='데이터 v'+(window.RHYME_DATA.version||'?')+' · '+WORDS.length.toLocaleString()+'단어';
-      document.querySelector('header').appendChild(s); }
+    else{
+      READY=true;
+      const l=document.getElementById('loading');
+      l.classList.add('out'); setTimeout(()=>l.remove(),350);
+      document.getElementById('foot').innerHTML=
+        '데이터 v'+(window.RHYME_DATA.version||'?')+' · '+WORDS.length.toLocaleString()+'단어<br>'+
+        '발음 자료: 국립국어원 <a href="https://opendict.korean.go.kr" target="_blank" rel="noopener">우리말샘</a> (CC BY-SA 2.0 KR)';
+    }
   }
   setTimeout(chunk,30);
 })();
 
 // ----- 입력 분석 -----
+function setPresetsEnabled(on){
+  document.querySelectorAll('#presets button').forEach(b=>b.disabled=!on);
+}
 function analyze(){
   const raw=document.getElementById('q').value.trim();
   const m=raw.split(/\s+/).pop().replace(/[^가-힣]/g,'');
   document.getElementById('clear').style.display=raw?'block':'none';
   const box=document.getElementById('syls'), pr=document.getElementById('pron');
-  if(!m){ qSyls=null; sel.clear();
-    box.innerHTML='<div class="hint">단어를 입력하면 음절이 나타나요.<br>초성·중성·종성을 탭해서 검색 조건을 고르세요.</div>';
+  if(!m){ qSyls=null; sel.clear(); setPresetsEnabled(false);
+    box.innerHTML='<div class="hint">단어를 입력하면 음절이 나타나요.<br>'+
+      '초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>'+
+      '음절 글자를 누르면 그 음절 전체가 토글돼요.</div>';
     pr.textContent='—'; updateCnt(); return; }
   const p=g2p(m);
   qSyls=decompose(p);
-  pr.textContent='['+p+']'+(p!==m?'  ← '+m:'');
+  pr.innerHTML='['+esc(p)+']'+(p!==m?'<span class="from">← '+esc(m)+'</span>':'');
   sel.clear();
   const last=qSyls.length-1;
   sel.add(last+':1');
   if(qSyls[last][2]) sel.add(last+':2');
+  setPresetsEnabled(true);
   renderSyls(p);
 }
 function renderSyls(p){
@@ -426,59 +565,94 @@ function renderSyls(p){
   box.innerHTML='';
   qSyls.forEach((s,i)=>{
     const d=document.createElement('div'); d.className='syl';
-    d.innerHTML='<div class="head">'+p[i]+'</div>';
+    const head=document.createElement('div');
+    head.className='head'; head.textContent=p[i]; head.title='음절 전체 선택/해제';
+    head.onclick=()=>{
+      const keys=[0,1,2].filter(sl=>sl!==2||s[2]).map(sl=>i+':'+sl);
+      const allOn=keys.every(k=>sel.has(k));
+      keys.forEach(k=>allOn?sel.delete(k):sel.add(k));
+      renderSyls(p); autoSearch();
+    };
+    d.appendChild(head);
     for(let slot=0;slot<3;slot++){
       const b=document.createElement('button');
       b.innerHTML='<span class="g">'+SLOTNAME[slot]+'</span><span class="p">'+SLOTCHAR(s,slot)+'</span>';
       const k=i+':'+slot;
       if(sel.has(k)) b.classList.add('on');
-      b.onclick=()=>{ sel.has(k)?sel.delete(k):sel.add(k); b.classList.toggle('on'); updateCnt(); };
+      b.onclick=()=>{ sel.has(k)?sel.delete(k):sel.add(k); b.classList.toggle('on'); updateCnt(); autoSearch(); };
       d.appendChild(b);
     }
     box.appendChild(d);
   });
   updateCnt();
 }
-function updateCnt(){ document.getElementById('cnt').textContent=sel.size+'개 선택됨'; }
+function updateCnt(){
+  const c=document.getElementById('cnt');
+  c.textContent=sel.size+'개 선택';
+  c.classList.add('bump'); setTimeout(()=>c.classList.remove('bump'),160);
+}
 
-// ----- 원본 단어와 유사도 계산 -----
+// ----- 프리셋 -----
+document.getElementById('presets').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||!qSyls) return;
+  const last=qSyls.length-1;
+  sel.clear();
+  if(b.dataset.p==='rhyme'){ sel.add(last+':1'); if(qSyls[last][2]) sel.add(last+':2'); }
+  else if(b.dataset.p==='last'){ sel.add(last+':0'); sel.add(last+':1'); if(qSyls[last][2]) sel.add(last+':2'); }
+  else if(b.dataset.p==='vowel2'){ sel.add(last+':1'); if(last>0) sel.add((last-1)+':1'); }
+  // 'none' -> 그대로 빈 선택
+  renderSyls(compose(qSyls)); autoSearch();
+});
+
+// ----- 유사도 계산 -----
 function getSim(qD, tD) {
   let score = 0;
   const minLen = Math.min(qD.length, tD.length);
   for (let i = 1; i <= minLen; i++) {
     const q = qD[qD.length - i], t = tD[tD.length - i];
-    if (q[0] === t[0]) score += 1; else if (P_CHO[q[0]] === P_CHO[t[0]]) score += 0.5;
-    if (q[1] === t[1]) score += 2; else if (P_JUNG[q[1]] === P_JUNG[t[1]]) score += 1;
-    if (q[2] === t[2]) score += 1; else if (P_JONG[q[2]] === P_JONG[t[2]]) score += 0.5;
+    if (q[0] === t[0]) score += 1;
+    else if (P_CHO[q[0]] === P_CHO[t[0]]) score += 0.5;
+    if (q[1] === t[1]) score += 2;
+    else if (P_JUNG[q[1]] === P_JUNG[t[1]]) score += 1;
+    if (q[2] === t[2]) score += 1;
+    else if (P_JONG[q[2]] === P_JONG[t[2]]) score += 0.5;
   }
   score -= Math.abs(qD.length - tD.length) * 0.5;
   return score;
 }
 
 // ----- 검색 -----
+let autoTimer=null;
+function autoSearch(){
+  if(!READY||!qSyls) return;
+  clearTimeout(autoTimer);
+  autoTimer=setTimeout(search,120);
+}
 function search(){
   const grid=document.getElementById('grid'), stat=document.getElementById('stat');
   grid.innerHTML=''; document.getElementById('more').style.display='none';
-  if(!qSyls||!sel.size){ stat.innerHTML=qSyls?'음소를 하나 이상 선택해줘.':''; return; }
-  if(PRON[WORDS.length-1]===undefined){ stat.innerHTML='아직 발음 사전을 만드는 중이야, 잠시 후 다시.'; return; }
-  
+  if(!qSyls||!sel.size){
+    stat.innerHTML=qSyls?'음소를 하나 이상 선택해 주세요.':'';
+    return;
+  }
+  if(!READY){ stat.innerHTML='아직 발음 사전을 만드는 중이에요. 잠시 후 다시 시도해 주세요.'; return; }
+
   const qn=qSyls.length;
   const conds=[...sel].map(k=>{
     const [i,slot]=k.split(':').map(Number);
-    return [qn-1-i, slot, qSyls[i][slot]]; 
+    return [qn-1-i, slot, qSyls[i][slot]];
   });
   const gm=mode==='x'?null:GROUPS[mode];
   const qWord=document.getElementById('q').value.trim().split(/\s+/).pop().replace(/[^가-힣]/g,'');
-  const lenLimit = parseInt(document.getElementById('len-limit').value, 10) || 0;
+  const lenLimit=parseInt(document.getElementById('len-limit').value,10)||0;
   const t0=performance.now();
   results=[];
   const N=commonOnly?RANKED:WORDS.length;
-  
+
   for(let i=0;i<N;i++){
     const w=WORDS[i];
     if(w===qWord) continue;
-    if(lenLimit > 0 && w.length !== lenLimit) continue;
-
+    if(lenLimit>0 && w.length!==lenLimit) continue;
     const p=PRON[i];
     const pl=p.length;
     let ok=true, exact=0;
@@ -496,24 +670,20 @@ function search(){
   for (let j = 0; j < results.length; j++) {
     const i = results[j][1];
     const tD = decompose(PRON[i]);
-    const simScore = tD ? getSim(qSyls, tD) : -999;
-    results[j].push(simScore);
+    results[j].push(tD ? getSim(qSyls, tD) : -999);
   }
-
   results.sort((a,b)=> b[0]-a[0] || b[2]-a[2] || a[1]-b[1]);
-  
+
   const ms=(performance.now()-t0).toFixed(0);
-  stat.innerHTML=results.length
-    ? '<b>'+results.length.toLocaleString()+'개</b> · '+ms+'ms · 보라색이 조건에 맞은 소리'
-    : '';
   shown=0;
   if(!results.length){
-    grid.innerHTML=''; 
     stat.innerHTML='';
-    document.getElementById('grid').insertAdjacentHTML('beforebegin','');
-    grid.innerHTML='<div class="empty" style="grid-column:1/-1">조건에 맞는 단어가 없어.<br>모드를 「유사 속성」으로 넓히거나 선택 음소를 줄여봐.</div>';
+    grid.innerHTML='<div class="empty"><span class="big">🔍</span>조건에 맞는 단어가 없어요.<br>'+
+      '모드를 「♪ 유사 속성」으로 넓히거나 선택한 음소를 줄여 보세요.</div>';
     return;
   }
+  stat.innerHTML='<span><b>'+results.length.toLocaleString()+'개</b> 발견 · '+ms+'ms</span>'+
+    '<span class="legend"><i></i>조건에 맞은 소리 · 카드를 누르면 복사돼요</span>';
   render(conds);
 }
 let lastConds=null;
@@ -523,8 +693,9 @@ function render(conds){
   const end=Math.min(shown+PAGE,results.length);
   const frag=document.createDocumentFragment();
   for(let k=shown;k<end;k++){
-    const [ex,i,simScore]=results[k], w=WORDS[i], p=PRON[i];
+    const [ex,i]=results[k], w=WORDS[i], p=PRON[i];
     const card=document.createElement('div'); card.className='card'; card.dataset.w=w;
+    card.style.animationDelay=Math.min((k-shown)*12,240)+'ms';
     const hits={};
     for(const [off,slot] of conds){ const pos=p.length-1-off; (hits[pos]=hits[pos]||new Set()).add(slot); }
     let jr='<div class="jrow">';
@@ -540,7 +711,7 @@ function render(conds){
     }
     jr+='</div>';
     card.innerHTML='<div class="top"><span class="w">'+esc(w)+'</span>'+
-      '<span class="tag">'+(i<RANKED?'자주 씀':'드묾')+'</span></div>'+
+      '<span class="tag '+(i<RANKED?'c':'r')+'">'+(i<RANKED?'자주 씀':'드묾')+'</span></div>'+
       '<div class="pr">['+esc(p)+']</div>'+jr;
     frag.appendChild(card);
   }
@@ -551,71 +722,117 @@ function render(conds){
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 
 // ----- 이벤트 -----
-document.getElementById('q').addEventListener('input',analyze);
-document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter'){analyze();search();}});
-document.getElementById('clear').onclick=()=>{document.getElementById('q').value='';analyze();};
+const qEl=document.getElementById('q');
+qEl.addEventListener('input',analyze);
+qEl.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ analyze(); search(); }
+  else if(e.key==='Escape'){ qEl.value=''; analyze(); }
+});
+document.getElementById('clear').onclick=()=>{ qEl.value=''; analyze(); qEl.focus(); };
 document.getElementById('go').onclick=search;
-
 document.getElementById('modes').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b)return;
   mode=b.dataset.m;
   document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));
-  if(results.length||qSyls) search();
+  document.getElementById('mode-desc').textContent=b.dataset.d;
+  if(results.length||qSyls) autoSearch();
 });
 
-document.getElementById('common').addEventListener('change',e=>{commonOnly=e.target.checked; if(qSyls)search();});
+// ----- 모드 툴팁 -----
+// 상세 그룹은 실제 검색 로직(P_CHO/P_JUNG/P_JONG, F_CHO/F_JUNG/F_JONG)과 동일한 내용
+const TIPS={
+  x:{
+    sum:'선택한 음소가 발음까지 <b>정확히 일치</b>하는 단어만 찾아요.',
+    rows:[
+      ['초성',['허용 그룹 없음 — 동일 자음만 (ㄱ↔ㄲ ✗)']],
+      ['중성',['허용 그룹 없음 — 동일 모음만 (ㅐ↔ㅔ ✗)']],
+      ['종성',['허용 그룹 없음 — 동일 받침만 (ㄴ↔ㅁ ✗)']]
+    ],
+    note:'가장 좁고 정확한 라임 — 결과가 적으면 「≈ 유사 음소」로 넓혀 보세요'
+  },
+  p:{
+    sum:'<b>비슷하게 들리는 음소</b>끼리 같은 소리로 인정해요.',
+    rows:[
+      ['초성',['ㄱ·ㄲ·ㅋ','ㄷ·ㄸ·ㅌ','ㅂ·ㅃ·ㅍ','ㅅ·ㅆ','ㅈ·ㅉ·ㅊ','ㄴ·ㅁ·ㄹ·ㅇ·ㅎ']],
+      ['중성',['ㅏ·ㅑ·ㅘ','ㅐ·ㅔ·ㅒ·ㅖ·ㅙ·ㅞ·ㅚ','ㅓ·ㅕ·ㅝ','ㅗ·ㅛ','ㅜ·ㅠ·ㅡ','ㅣ·ㅢ·ㅟ']],
+      ['종성',['ㄴ·ㅁ·ㅇ','ㄹ','ㄱ·ㅋ·ㄲ','ㅂ·ㅍ','ㄷ·ㅌ·ㅅ·ㅆ·ㅈ·ㅊ·ㅎ']]
+    ],
+    note:'같은 칸 안의 음소끼리 서로 인정 · 겹받침은 대표 발음으로 바뀐 뒤 비교돼요'
+  },
+  f:{
+    sum:'<b>소리의 성질(조음 방식)</b>이 같으면 넓게 인정해요.',
+    rows:[
+      ['초성',['파열음 ㄱ·ㄲ·ㅋ·ㄷ·ㄸ·ㅌ·ㅂ·ㅃ·ㅍ','마찰·파찰 ㅅ·ㅆ·ㅈ·ㅉ·ㅊ','울림 ㄴ·ㄹ·ㅁ·ㅇ·ㅎ']],
+      ['중성',['「≈ 유사 음소」와 동일한 6개 모음 그룹']],
+      ['종성',['울림 받침 ㄴ·ㄹ·ㅁ·ㅇ','막힘 받침 ㄱ·ㄷ·ㅂ 계열 전부']]
+    ],
+    note:'가장 넓은 검색 범위 — 결과가 없을 때 이 모드로 넓혀 보세요'
+  }
+};
+const mtip=document.getElementById('mtip');
+function tipHTML(t){
+  let h='<div class="t-sum">'+t.sum+'</div>';
+  if(t.rows){
+    h+='<div class="t-det">'+t.rows.map(r=>
+      '<div class="t-row"><span class="t-k">'+r[0]+'</span><span class="t-gs">'+
+      r[1].map(g=>'<i>'+g+'</i>').join('')+'</span></div>').join('')+'</div>';
+  }
+  if(t.note) h+='<div class="t-note">'+t.note+'</div>';
+  return h;
+}
+function showTip(b){
+  const t=TIPS[b.dataset.m]; if(!t) return;
+  mtip.innerHTML=tipHTML(t);
+  const r=b.getBoundingClientRect();
+  const w=mtip.offsetWidth, h=mtip.offsetHeight;
+  let x=r.left+r.width/2-w/2;
+  x=Math.max(8,Math.min(x,innerWidth-w-8));
+  let y=r.bottom+9;
+  if(y+h>innerHeight-8) y=r.top-h-9;
+  mtip.style.left=x+'px'; mtip.style.top=y+'px';
+  mtip.classList.add('show'); mtip.setAttribute('aria-hidden','false');
+}
+function hideTip(){ mtip.classList.remove('show'); mtip.setAttribute('aria-hidden','true'); }
+const modesEl=document.getElementById('modes');
+modesEl.addEventListener('mouseover',e=>{ const b=e.target.closest('button'); if(b) showTip(b); });
+modesEl.addEventListener('mouseleave',hideTip);
+modesEl.addEventListener('focusin',e=>{ const b=e.target.closest('button'); if(b) showTip(b); });
+modesEl.addEventListener('focusout',hideTip);
+addEventListener('scroll',hideTip,{passive:true});
+document.getElementById('common').addEventListener('change',e=>{commonOnly=e.target.checked; autoSearch();});
 
-const lenInp = document.getElementById('len-limit');
-document.getElementById('len-dec').addEventListener('click', () => {
-  let v = parseInt(lenInp.value, 10) || 0;
-  if (v > 0) { lenInp.value = v - 1; if(qSyls) search(); }
+const lenInp=document.getElementById('len-limit');
+document.getElementById('len-dec').addEventListener('click',()=>{
+  const v=parseInt(lenInp.value,10)||0;
+  if(v>0){ lenInp.value=v-1; autoSearch(); }
 });
-document.getElementById('len-inc').addEventListener('click', () => {
-  let v = parseInt(lenInp.value, 10) || 0;
-  lenInp.value = v + 1;
-  if(qSyls) search();
+document.getElementById('len-inc').addEventListener('click',()=>{
+  lenInp.value=(parseInt(lenInp.value,10)||0)+1;
+  autoSearch();
 });
-lenInp.addEventListener('input', () => {
-  let v = parseInt(lenInp.value, 10) || 0;
-  if (v < 0) lenInp.value = 0;
-  if(qSyls) search();
+lenInp.addEventListener('input',()=>{
+  if((parseInt(lenInp.value,10)||0)<0) lenInp.value=0;
+  autoSearch();
 });
 
-document.getElementById('more').onclick=()=>render();
+// 더 보기 + 무한 스크롤
+const moreBtn=document.getElementById('more');
+moreBtn.onclick=()=>render();
+if('IntersectionObserver' in window){
+  new IntersectionObserver(es=>{
+    if(es[0].isIntersecting && moreBtn.style.display==='block') render();
+  },{rootMargin:'400px'}).observe(moreBtn);
+}
 
-// 카드 클릭 이벤트 (복사 및 툴팁)
+// 카드 복사
 document.getElementById('grid').addEventListener('click',e=>{
   const c=e.target.closest('.card'); if(!c)return;
   const w=c.dataset.w;
-  
   (navigator.clipboard?navigator.clipboard.writeText(w):Promise.reject()).then(()=>{
     const t=document.getElementById('toast');
     t.textContent='「'+w+'」 복사됨'; t.classList.add('show');
-    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1200);
+    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1300);
   }).catch(()=>{});
-
-  let tip = c.querySelector('.card-tip');
-  if (!tip) {
-    tip = document.createElement('div');
-    tip.className = 'card-tip';
-    const meaning = (window.RHYME_DATA.meanings && window.RHYME_DATA.meanings[w]) 
-                  ? window.RHYME_DATA.meanings[w] 
-                  : '단어 설명이 없습니다.';
-    tip.textContent = meaning;
-    c.appendChild(tip);
-  }
-  
-  document.querySelectorAll('.card-tip.show').forEach(el => {
-    if (el !== tip) el.classList.remove('show');
-  });
-
-  tip.classList.add('show');
-  
-  // 모바일 등에서 영원히 남아있는 것을 방지 (마우스가 떠나거나 2.5초 뒤 제거)
-  clearTimeout(c._tipTimer);
-  const hideTip = () => tip.classList.remove('show');
-  c.addEventListener('mouseleave', hideTip, { once: true });
-  c._tipTimer = setTimeout(hideTip, 2500); 
 });
 </script>
 </body>
