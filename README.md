@@ -37,6 +37,6 @@
 - 단어 목록: [mecab-ko-dic](https://bitbucket.org/eunjeon/mecab-ko-dic) —
   Apache License 2.0 (전문: [LICENSE-mecab-ko-dic.txt](LICENSE-mecab-ko-dic.txt))
 - 사용 빈도 데이터: [FrequencyWords](https://github.com/hermitdave/FrequencyWords)
-  (Hermit Dave, OpenSubtitles 기반) — MIT License
+  (OpenSubtitles 기반) — MIT License, Copyright (c) 2016 Hermit Dave
 - 발음·품사 자료: 국립국어원 [우리말샘](https://opendict.korean.go.kr) —
   CC BY-SA 2.0 KR (단어데이터.js에 포함, 재배포 시 동일 라이선스 적용)
