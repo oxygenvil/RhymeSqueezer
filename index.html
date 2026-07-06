@@ -177,6 +177,11 @@ label.tog input[type="checkbox"]{accent-color:var(--pri);width:15px;height:15px;
 .pos-chips button:hover{color:var(--pri-ink)}
 .pos-chips button.on{background:var(--card);color:var(--pri-ink);font-weight:700;
   box-shadow:0 1px 4px rgba(23,27,38,.10)}
+.pos-acts{display:inline-flex;gap:5px}
+.pos-acts button{border:1px solid var(--line);background:var(--card);border-radius:999px;
+  font-size:11px;padding:4px 10px;cursor:pointer;color:var(--dim);font-weight:600;
+  transition:all .13s}
+.pos-acts button:hover{border-color:var(--pri);color:var(--pri-ink);background:var(--pri-soft)}
 
 /* ===== 결과 ===== */
 #stat{margin:26px 4px 12px;font-size:13px;color:var(--dim);display:flex;align-items:center;
@@ -311,14 +316,17 @@ footer a{color:var(--dim)}
     </label>
   </div>
   <div class="opts2" id="pos-opts" hidden>
-    <div class="pos-chips" id="pos-chips" role="group" aria-label="품사 필터">
-      <button data-pos="" class="on">전체</button>
-      <button data-pos="n">명사</button>
-      <button data-pos="v">동사</button>
-      <button data-pos="a">형용사</button>
-      <button data-pos="d">부사</button>
-      <button data-pos="etc">기타</button>
+    <div class="pos-chips" id="pos-chips" role="group" aria-label="품사 필터 (복수 선택)">
+      <button data-pos="n" class="on" aria-pressed="true">명사</button>
+      <button data-pos="v" class="on" aria-pressed="true">동사</button>
+      <button data-pos="a" class="on" aria-pressed="true">형용사</button>
+      <button data-pos="d" class="on" aria-pressed="true">부사</button>
+      <button data-pos="etc" class="on" aria-pressed="true">기타</button>
     </div>
+    <span class="pos-acts">
+      <button type="button" id="pos-all">전체선택</button>
+      <button type="button" id="pos-none">전체해제</button>
+    </span>
     <label class="tog" title="예: 당신이, 학교에서 같은 조사 결합형">
       <input type="checkbox" id="josa" checked>조사 붙은 형태 포함</label>
   </div>
@@ -517,6 +525,14 @@ const WORDS=window.RHYME_DATA.words.split(' ');
 const POS=(window.RHYME_DATA.pos && window.RHYME_DATA.pos.length===WORDS.length)
   ? window.RHYME_DATA.pos : '';
 Object.assign(EXC, window.RHYME_DATA.exc||{});
+// 발음 우선순위: 우리말샘 공식 발음(prons) > 표기=발음 확정 목록(confirmed) > g2p 엔진 추측
+const PRONS=window.RHYME_DATA.prons||{};
+const CONFIRMED=new Set((window.RHYME_DATA.confirmed||'').split(' '));
+function pronOf(w){
+  const p=PRONS[w];                       // 객체 상속 프로퍼티 오염 방지
+  if(typeof p==='string') return p;
+  return CONFIRMED.has(w)?w:g2p(w);
+}
 const PRON=new Array(WORDS.length);
 let READY=false;
 
@@ -540,7 +556,8 @@ const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[
 
 // ----- 상태 -----
 let mode='p', commonOnly=true, qSyls=null, sel=new Set(), results=[], shown=0;
-let posFilter='', includeJosa=true;
+const POS_ALL=['n','v','a','d','etc'];
+let posSel=new Set(POS_ALL), includeJosa=true;
 const PAGE=60;
 if(POS) document.getElementById('pos-opts').hidden=false;
 
@@ -550,7 +567,7 @@ if(POS) document.getElementById('pos-opts').hidden=false;
   let i=0;
   function chunk(){
     const end=Math.min(i+20000,WORDS.length);
-    for(;i<end;i++){ PRON[i]=g2p(WORDS[i]); }
+    for(;i<end;i++){ PRON[i]=pronOf(WORDS[i]); }
     const p=i/WORDS.length*100;
     bar.style.width=p+'%'; pct.textContent=p.toFixed(0)+'%';
     if(i<WORDS.length) setTimeout(chunk,0);
@@ -580,7 +597,7 @@ function analyze(){
       '초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>'+
       '음절 글자를 누르면 그 음절 전체가 토글돼요.</div>';
     pr.textContent='—'; updateCnt(); return; }
-  const p=g2p(m);
+  const p=pronOf(m);
   qSyls=decompose(p);
   pr.innerHTML='['+esc(p)+']'+(p!==m?'<span class="from">← '+esc(m)+'</span>':'');
   sel.clear();
@@ -679,9 +696,16 @@ function search(){
   results=[];
   const N=commonOnly?RANKED:WORDS.length;
   // 품사 필터: POS 문자에서 대문자(코드<97)=조사 결합형, |32로 소문자화해 품사 비교
-  const posActive=POS && (posFilter || !includeJosa);
-  const pfCode=posFilter && posFilter!=='etc' ? posFilter.charCodeAt(0) : 0;
-  const pfEtc=posFilter==='etc';
+  // 소문자 코드별 허용 테이블 — n·v·a·d 외 문자(i감탄사·x기타 등)는 「기타」로 취급
+  const posActive=POS && (posSel.size<POS_ALL.length || !includeJosa);
+  const allow=new Uint8Array(128);
+  if(posActive){
+    allow.fill(posSel.has('etc')?1:0);
+    allow[110]=posSel.has('n')?1:0;  // n
+    allow[118]=posSel.has('v')?1:0;  // v
+    allow[97] =posSel.has('a')?1:0;  // a
+    allow[100]=posSel.has('d')?1:0;  // d
+  }
 
   for(let i=0;i<N;i++){
     const w=WORDS[i];
@@ -690,9 +714,7 @@ function search(){
     if(posActive){
       const pc=POS.charCodeAt(i);
       if(!includeJosa && pc<97) continue;
-      const lc=pc|32;
-      if(pfCode){ if(lc!==pfCode) continue; }
-      else if(pfEtc){ if(lc===110||lc===118||lc===97||lc===100) continue; } // n·v·a·d 제외
+      if(!allow[pc|32]) continue;
     }
     const p=PRON[i];
     const pl=p.length;
@@ -719,8 +741,11 @@ function search(){
   shown=0;
   if(!results.length){
     stat.innerHTML='';
-    grid.innerHTML='<div class="empty"><span class="big">🔍</span>조건에 맞는 단어가 없어요.<br>'+
-      '모드를 「♪ 유사 속성」으로 넓히거나 선택한 음소를 줄여 보세요.</div>';
+    grid.innerHTML= POS&&!posSel.size
+      ? '<div class="empty"><span class="big">🏷️</span>품사가 모두 해제되어 있어요.<br>'+
+        '품사를 하나 이상 선택하거나 「전체선택」을 눌러 주세요.</div>'
+      : '<div class="empty"><span class="big">🔍</span>조건에 맞는 단어가 없어요.<br>'+
+        '모드를 「♪ 유사 속성」으로 넓히거나 선택한 음소를 줄여 보세요.</div>';
     return;
   }
   stat.innerHTML='<span><b>'+results.length.toLocaleString()+'개</b> 발견 · '+ms+'ms</span>'+
@@ -842,12 +867,25 @@ modesEl.addEventListener('focusout',hideTip);
 addEventListener('scroll',hideTip,{passive:true});
 document.getElementById('common').addEventListener('change',e=>{commonOnly=e.target.checked; autoSearch();});
 
-// ----- 품사 필터 -----
+// ----- 품사 필터 (복수 선택) -----
+function syncPosChips(){
+  document.querySelectorAll('#pos-chips button').forEach(b=>{
+    const on=posSel.has(b.dataset.pos);
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on);
+  });
+}
 document.getElementById('pos-chips').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
-  posFilter=b.dataset.pos;
-  document.querySelectorAll('#pos-chips button').forEach(x=>x.classList.toggle('on',x===b));
-  autoSearch();
+  const p=b.dataset.pos;
+  posSel.has(p)?posSel.delete(p):posSel.add(p);
+  syncPosChips(); autoSearch();
+});
+document.getElementById('pos-all').addEventListener('click',()=>{
+  posSel=new Set(POS_ALL); syncPosChips(); autoSearch();
+});
+document.getElementById('pos-none').addEventListener('click',()=>{
+  posSel.clear(); syncPosChips(); autoSearch();
 });
 document.getElementById('josa').addEventListener('change',e=>{includeJosa=e.target.checked; autoSearch();});
 
