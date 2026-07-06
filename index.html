@@ -166,6 +166,18 @@ label.tog input[type="checkbox"]{accent-color:var(--pri);width:15px;height:15px;
   outline:none;font-family:inherit;-moz-appearance:textfield;background:transparent}
 .num-wrap input::-webkit-outer-spin-button,.num-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
+/* 품사 필터 */
+.opts2{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:12px;flex-wrap:wrap}
+.opts2[hidden]{display:none}
+.pos-chips{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;
+  background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px}
+.pos-chips button{border:0;background:none;border-radius:999px;color:var(--dim);
+  font-size:12px;padding:5px 12px;cursor:pointer;font-weight:600;white-space:nowrap;
+  transition:all .13s}
+.pos-chips button:hover{color:var(--pri-ink)}
+.pos-chips button.on{background:var(--card);color:var(--pri-ink);font-weight:700;
+  box-shadow:0 1px 4px rgba(23,27,38,.10)}
+
 /* ===== 결과 ===== */
 #stat{margin:26px 4px 12px;font-size:13px;color:var(--dim);display:flex;align-items:center;
   justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:20px}
@@ -297,6 +309,18 @@ footer a{color:var(--dim)}
         <button type="button" id="len-inc" aria-label="글자수 늘리기">＋</button>
       </span>
     </label>
+  </div>
+  <div class="opts2" id="pos-opts" hidden>
+    <div class="pos-chips" id="pos-chips" role="group" aria-label="품사 필터">
+      <button data-pos="" class="on">전체</button>
+      <button data-pos="n">명사</button>
+      <button data-pos="v">동사</button>
+      <button data-pos="a">형용사</button>
+      <button data-pos="d">부사</button>
+      <button data-pos="etc">기타</button>
+    </div>
+    <label class="tog" title="예: 당신이, 학교에서 같은 조사 결합형">
+      <input type="checkbox" id="josa" checked>조사 붙은 형태 포함</label>
   </div>
 </div>
 
@@ -488,6 +512,10 @@ if(window.__DATA_MISSING||!window.RHYME_DATA){
 }
 const RANKED=window.RHYME_DATA.ranked;
 const WORDS=window.RHYME_DATA.words.split(' ');
+// 품사 문자열: words와 1:1 정렬, 단어당 1문자 (n명사 v동사 a형용사 d부사 i감탄사 x기타 / 대문자=조사 결합형)
+// 구버전 데이터에는 없을 수 있음 — 없으면 빈 문자열로 두고 필터 UI를 숨긴다
+const POS=(window.RHYME_DATA.pos && window.RHYME_DATA.pos.length===WORDS.length)
+  ? window.RHYME_DATA.pos : '';
 Object.assign(EXC, window.RHYME_DATA.exc||{});
 const PRON=new Array(WORDS.length);
 let READY=false;
@@ -512,7 +540,9 @@ const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[
 
 // ----- 상태 -----
 let mode='p', commonOnly=true, qSyls=null, sel=new Set(), results=[], shown=0;
+let posFilter='', includeJosa=true;
 const PAGE=60;
+if(POS) document.getElementById('pos-opts').hidden=false;
 
 // ----- 발음 사전 구축 (청크 처리) -----
 (function build(){
@@ -648,11 +678,22 @@ function search(){
   const t0=performance.now();
   results=[];
   const N=commonOnly?RANKED:WORDS.length;
+  // 품사 필터: POS 문자에서 대문자(코드<97)=조사 결합형, |32로 소문자화해 품사 비교
+  const posActive=POS && (posFilter || !includeJosa);
+  const pfCode=posFilter && posFilter!=='etc' ? posFilter.charCodeAt(0) : 0;
+  const pfEtc=posFilter==='etc';
 
   for(let i=0;i<N;i++){
     const w=WORDS[i];
     if(w===qWord) continue;
     if(lenLimit>0 && w.length!==lenLimit) continue;
+    if(posActive){
+      const pc=POS.charCodeAt(i);
+      if(!includeJosa && pc<97) continue;
+      const lc=pc|32;
+      if(pfCode){ if(lc!==pfCode) continue; }
+      else if(pfEtc){ if(lc===110||lc===118||lc===97||lc===100) continue; } // n·v·a·d 제외
+    }
     const p=PRON[i];
     const pl=p.length;
     let ok=true, exact=0;
@@ -800,6 +841,15 @@ modesEl.addEventListener('focusin',e=>{ const b=e.target.closest('button'); if(b
 modesEl.addEventListener('focusout',hideTip);
 addEventListener('scroll',hideTip,{passive:true});
 document.getElementById('common').addEventListener('change',e=>{commonOnly=e.target.checked; autoSearch();});
+
+// ----- 품사 필터 -----
+document.getElementById('pos-chips').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  posFilter=b.dataset.pos;
+  document.querySelectorAll('#pos-chips button').forEach(x=>x.classList.toggle('on',x===b));
+  autoSearch();
+});
+document.getElementById('josa').addEventListener('change',e=>{includeJosa=e.target.checked; autoSearch();});
 
 const lenInp=document.getElementById('len-limit');
 document.getElementById('len-dec').addEventListener('click',()=>{

@@ -17,6 +17,10 @@
   초성은 끊는 소리 / 치찰음 / 잇는 소리, 종성은 울림소리(ㄴㄹㅁㅇ) / 안울림소리(ㄱㄷㅂ).
   모음 그룹은 유사 음소와 동일.
 
+검색 결과는 **품사 칩**(전체/명사/동사/형용사/부사/기타)으로 거를 수 있고,
+「조사 붙은 형태 포함」을 끄면 당신이·학교에서 같은 조사 결합형이 제외됩니다.
+(단어데이터.js에 `pos` 필드가 없는 구버전 데이터에서는 이 필터가 숨겨집니다.)
+
 ## 파일 구성
 
 | 파일 | 설명 |
@@ -25,6 +29,7 @@
 | `단어데이터.js` | 단어 데이터. 이 파일만 교체하면 업데이트 |
 | `단어목록.txt` | 데이터 원본 목록 (한 줄에 하나, `-----` 위가 자주 쓰는 말) |
 | `데이터_만들기.py` | 단어목록.txt → 단어데이터.js 생성기 |
+| `품사_붙이기.py` | 단어데이터.js에 품사(`pos`) 필드 추가 — 우리말샘 XML + [kiwipiepy](https://github.com/bab2min/kiwipiepy) 필요 (`pip install kiwipiepy`) |
 
 발음 예외(ㄴ첨가·사잇소리 등 규칙으로 예측 불가한 단어)는
 `단어데이터.js`의 `exc` 항목에 `"표기": "발음"` 형태로 추가할 수 있습니다.
@@ -35,5 +40,5 @@
   Apache License 2.0 (전문: [LICENSE-mecab-ko-dic.txt](LICENSE-mecab-ko-dic.txt))
 - 사용 빈도 데이터: [FrequencyWords](https://github.com/hermitdave/FrequencyWords)
   (Hermit Dave, OpenSubtitles 기반) — MIT License
-
-이 저장소의 코드는 자유롭게 사용하셔도 됩니다.
+- 발음·품사 자료: 국립국어원 [우리말샘](https://opendict.korean.go.kr) —
+  CC BY-SA 2.0 KR (단어데이터.js에 포함, 재배포 시 동일 라이선스 적용)
