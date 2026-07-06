@@ -305,7 +305,7 @@ footer a{color:var(--dim)}
   <button id="go">라임 검색</button>
 
   <div class="opts">
-    <label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만</label>
+    <label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만(부정확함)</label>
     <label class="tog" title="0은 제한 없음">
       글자수
       <span class="num-wrap">
@@ -367,7 +367,7 @@ footer a{color:var(--dim)}
 // 음절 = [초성idx, 중성idx, 종성idx(0=없음)]
 const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
 const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
-const JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+const JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
 const cI = {}, jI = {}, gI = {};
 [...CHO].forEach((c, i) => cI[c] = i);
 [...JUNG].forEach((c, i) => jI[c] = i);
@@ -577,7 +577,7 @@ if(POS) document.getElementById('pos-opts').hidden=false;
       l.classList.add('out'); setTimeout(()=>l.remove(),350);
       document.getElementById('foot').innerHTML=
         '데이터 v'+(window.RHYME_DATA.version||'?')+' · '+WORDS.length.toLocaleString()+'단어<br>'+
-        '발음 자료: 국립국어원 <a href="https://opendict.korean.go.kr" target="_blank" rel="noopener">우리말샘</a> (CC BY-SA 2.0 KR)';
+        '발음 자료: 국립국어원 <a href="https://opendict.korean.go.kr" target="_blank" rel="noopener">우리말샘</a> (CC BY-SA 2.0 KR)<br>'+'<a href="https://github.com/oxygenvil/RhymeSqueezer" target="_blank" rel="noopener">Repository Link</a>';
     }
   }
   setTimeout(chunk,30);
