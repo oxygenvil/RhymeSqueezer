@@ -35,7 +35,7 @@
 ## 데이터 출처 및 라이선스
 
 - 단어 목록: [mecab-ko-dic](https://bitbucket.org/eunjeon/mecab-ko-dic) —
-  Apache License 2.0 (전문: [LICENSE-mecab-ko-dic.txt](LICENSE-mecab-ko-dic.txt))
+  Apache License 2.0 (전문: [licenses/LICENSE-mecab-ko-dic.txt](licenses/LICENSE-mecab-ko-dic.txt))
 - 사용 빈도 데이터: [FrequencyWords](https://github.com/hermitdave/FrequencyWords)
   (OpenSubtitles 기반) — MIT License, Copyright (c) 2016 Hermit Dave
 - 발음·품사 자료: 국립국어원 [우리말샘](https://opendict.korean.go.kr) —
