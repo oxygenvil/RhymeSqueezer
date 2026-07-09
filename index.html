@@ -73,22 +73,25 @@ button{font-family:inherit;color:inherit}
 .lab .cnt{background:var(--pri-soft);color:var(--pri-ink);border-radius:999px;padding:2px 10px;
   font-size:11px;letter-spacing:0;font-weight:700;transition:transform .15s}
 .lab .cnt.bump{transform:scale(1.12)}
+.lab .tog{text-transform:none;letter-spacing:0;font-size:12px}
 
 .inbox{position:relative}
-#q{width:100%;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--bg);
+.inbox+.inbox{margin-top:10px}
+#q,#q2{width:100%;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--bg);
   font-size:20px;font-weight:600;padding:13px 42px 13px 15px;outline:0;font-family:inherit;
   color:var(--ink);transition:border-color .15s,background .15s,box-shadow .15s}
-#q::placeholder{color:var(--faint);font-weight:400}
-#q:focus{border-color:var(--pri);background:var(--card);box-shadow:0 0 0 3px var(--pri-soft)}
-#q::-webkit-search-cancel-button{display:none}
-#clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;
+#q::placeholder,#q2::placeholder{color:var(--faint);font-weight:400}
+#q:focus,#q2:focus{border-color:var(--pri);background:var(--card);box-shadow:0 0 0 3px var(--pri-soft)}
+#q::-webkit-search-cancel-button,#q2::-webkit-search-cancel-button{display:none}
+#clear,#clear2{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;
   color:var(--faint);font-size:15px;cursor:pointer;padding:6px 8px;display:none;border-radius:8px}
-#clear:hover{color:var(--ink)}
+#clear:hover,#clear2:hover{color:var(--ink)}
 
 .pron{margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-md);
   padding:10px 14px;font-size:11px;color:var(--dim);letter-spacing:.06em;font-weight:600}
 .pron b{display:block;font-size:19px;color:var(--ink);margin-top:3px;font-weight:700;letter-spacing:0}
 .pron b .from{font-size:12px;color:var(--faint);font-weight:500;margin-left:6px}
+.pron b[hidden]{display:none}
 
 /* 프리셋 */
 .presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
@@ -115,6 +118,10 @@ button{font-family:inherit;color:inherit}
 .syl button.on:hover{background:var(--hit);filter:brightness(1.08)}
 .syl button.on .g{color:var(--hit-ink);opacity:.65}
 .syl button.on .p{color:var(--hit-ink)}
+.syl .head.two{font-size:13.5px;letter-spacing:-.03em}
+.syl button:disabled{cursor:default;opacity:.35}
+.syl button:disabled:hover{background:none}
+.syl-ellip{align-self:center;color:var(--faint);font-size:16px;font-weight:800;cursor:help;padding:0 2px}
 .hint{color:var(--faint);font-size:12.5px;padding:24px 6px;line-height:1.9}
 .hint .kbd{display:inline-block;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;
   padding:0 6px;font-size:11px;color:var(--dim);background:var(--bg)}
@@ -273,16 +280,22 @@ footer a{color:var(--dim)}
 <div class="panel">
   <div class="cols">
     <div class="col-in">
-      <div class="lab"><span>단어 입력 (표기)</span></div>
+      <div class="lab"><span>단어 입력 (표기)</span>
+        <label class="tog"><input type="checkbox" id="dual">공통 라임 검색</label></div>
       <div class="inbox">
         <input id="q" type="search" placeholder="예: 사랑, 불꽃놀이" autocomplete="off"
                autofocus enterkeyhint="search" aria-label="라임을 찾을 단어 입력">
         <button id="clear" aria-label="입력 지우기">✕</button>
       </div>
-      <div class="pron">분석한 발음<b id="pron">—</b></div>
+      <div class="inbox" id="inbox2" hidden>
+        <input id="q2" type="search" placeholder="두 번째 단어" autocomplete="off"
+               enterkeyhint="search" aria-label="공통 라임을 비교할 두 번째 단어 입력">
+        <button id="clear2" aria-label="두 번째 입력 지우기">✕</button>
+      </div>
+      <div class="pron">분석한 발음<b id="pron">—</b><b id="pron2" hidden>—</b></div>
     </div>
     <div class="col-ph">
-      <div class="lab"><span>검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택</span></div>
+      <div class="lab"><span id="ph-lab">검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택</span></div>
       <div class="presets" id="presets">
         <button data-p="rhyme" disabled>끝 모음+받침</button>
         <button data-p="last" disabled>끝 음절 전체</button>
@@ -555,7 +568,7 @@ const SLOTNAME=['초성','중성','종성'];
 const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[s[2]]:'–');
 
 // ----- 상태 -----
-let mode='p', commonOnly=true, qSyls=null, sel=new Set(), results=[], shown=0;
+let mode='p', commonOnly=true, qSyls=null, qSyls2=null, dual=false, sel=new Set(), results=[], shown=0;
 const POS_ALL=['n','v','a','d','etc'];
 let posSel=new Set(POS_ALL), includeJosa=true;
 const PAGE=60;
@@ -587,25 +600,58 @@ if(POS) document.getElementById('pos-opts').hidden=false;
 function setPresetsEnabled(on){
   document.querySelectorAll('#presets button').forEach(b=>b.disabled=!on);
 }
-function analyze(){
-  const raw=document.getElementById('q').value.trim();
-  const m=raw.split(/\s+/).pop().replace(/[^가-힣]/g,'');
-  document.getElementById('clear').style.display=raw?'block':'none';
-  const box=document.getElementById('syls'), pr=document.getElementById('pron');
-  if(!m){ qSyls=null; sel.clear(); setPresetsEnabled(false);
-    box.innerHTML='<div class="hint">단어를 입력하면 음절이 나타나요.<br>'+
-      '초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>'+
-      '음절 글자를 누르면 그 음절 전체가 토글돼요.</div>';
-    pr.textContent='—'; updateCnt(); return; }
+const HINT_SINGLE='<div class="hint">단어를 입력하면 음절이 나타나요.<br>'+
+  '초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>'+
+  '음절 글자를 누르면 그 음절 전체가 토글돼요.</div>';
+const HINT_DUAL='<div class="hint">두 단어를 모두 입력하면 <b>공통 음소</b>가 나타나요.<br>'+
+  '두 단어가 같은 소리로 인정되는 음소만 선택할 수 있어요.</div>';
+function wordOf(id){
+  return document.getElementById(id).value.trim().split(/\s+/).pop().replace(/[^가-힣]/g,'');
+}
+function readInput(qid,clearId,prId){
+  const raw=document.getElementById(qid).value.trim();
+  document.getElementById(clearId).style.display=raw?'block':'none';
+  const m=wordOf(qid), pr=document.getElementById(prId);
+  if(!m){ pr.textContent='—'; return null; }
   const p=pronOf(m);
-  qSyls=decompose(p);
   pr.innerHTML='['+esc(p)+']'+(p!==m?'<span class="from">← '+esc(m)+'</span>':'');
+  return decompose(p);
+}
+function analyze(){
+  qSyls=readInput('q','clear','pron');
+  qSyls2=readInput('q2','clear2','pron2');
   sel.clear();
-  const last=qSyls.length-1;
-  sel.add(last+':1');
-  if(qSyls[last][2]) sel.add(last+':2');
-  setPresetsEnabled(true);
-  renderSyls(p);
+  const box=document.getElementById('syls');
+  if(dual){
+    if(!qSyls||!qSyls2){ setPresetsEnabled(false); box.innerHTML=HINT_DUAL; updateCnt(); return; }
+    const ck=commonKeys(), last=qSyls.length-1;
+    if(ck.has(last+':1')) sel.add(last+':1');
+    if(qSyls[last][2]&&ck.has(last+':2')) sel.add(last+':2');
+    setPresetsEnabled(true);
+    renderSylsDual();
+  }else{
+    if(!qSyls){ setPresetsEnabled(false); box.innerHTML=HINT_SINGLE; updateCnt(); return; }
+    const last=qSyls.length-1;
+    sel.add(last+':1');
+    if(qSyls[last][2]) sel.add(last+':2');
+    setPresetsEnabled(true);
+    renderSyls(compose(qSyls));
+  }
+}
+// 공통 라임: 두 단어를 끝에서부터 정렬해, 현재 모드 기준 같은 소리로 인정되는 음소 키(단어1 좌표)
+function commonKeys(){
+  const keys=new Set();
+  if(!qSyls||!qSyls2) return keys;
+  const n1=qSyls.length, n2=qSyls2.length, L=Math.min(n1,n2);
+  const gm=mode==='x'?null:GROUPS[mode];
+  for(let k=1;k<=L;k++){
+    const s1=qSyls[n1-k], s2=qSyls2[n2-k];
+    for(let slot=0;slot<3;slot++){
+      if(s1[slot]===s2[slot]||(gm&&gm[slot][s1[slot]]===gm[slot][s2[slot]]))
+        keys.add((n1-k)+':'+slot);
+    }
+  }
+  return keys;
 }
 function renderSyls(p){
   const box=document.getElementById('syls');
@@ -633,6 +679,56 @@ function renderSyls(p){
   });
   updateCnt();
 }
+function renderSylsDual(){
+  const box=document.getElementById('syls');
+  box.innerHTML='';
+  const ck=commonKeys();
+  if(!ck.size){
+    box.innerHTML='<div class="hint">두 단어에 공통되는 음소가 없어요.<br>'+
+      '모드를 「≈ 유사 음소」나 「♪ 유사 속성」으로 넓혀 보세요.</div>';
+    updateCnt(); return;
+  }
+  const n1=qSyls.length, n2=qSyls2.length, L=Math.min(n1,n2);
+  const p1=compose(qSyls), p2=compose(qSyls2);
+  if(n1!==n2){
+    const e=document.createElement('div'); e.className='syl-ellip'; e.textContent='…';
+    e.title='두 단어의 길이가 달라 뒤에서부터 '+L+'음절만 비교해요';
+    box.appendChild(e);
+  }
+  for(let k=L;k>=1;k--){
+    const i1=n1-k, i2=n2-k, s1=qSyls[i1], s2=qSyls2[i2];
+    const d=document.createElement('div'); d.className='syl';
+    const head=document.createElement('div'); head.className='head';
+    if(p1[i1]===p2[i2]) head.textContent=p1[i1];
+    else{ head.textContent=p1[i1]+'·'+p2[i2]; head.classList.add('two'); }
+    head.title='음절 전체 선택/해제 (공통 음소만)';
+    head.onclick=()=>{
+      const keys=[0,1,2].filter(sl=>(sl!==2||s1[2]||s2[2])&&ck.has(i1+':'+sl)).map(sl=>i1+':'+sl);
+      if(!keys.length) return;
+      const allOn=keys.every(x=>sel.has(x));
+      keys.forEach(x=>allOn?sel.delete(x):sel.add(x));
+      renderSylsDual(); autoSearch();
+    };
+    d.appendChild(head);
+    for(let slot=0;slot<3;slot++){
+      const b=document.createElement('button');
+      const c1=SLOTCHAR(s1,slot), c2=SLOTCHAR(s2,slot);
+      b.innerHTML='<span class="g">'+SLOTNAME[slot]+'</span><span class="p">'+
+        (c1===c2?c1:c1+'·'+c2)+'</span>';
+      const key=i1+':'+slot;
+      if(!ck.has(key)){
+        b.disabled=true;
+        b.title='두 단어의 소리가 달라 선택할 수 없어요';
+      }else{
+        if(sel.has(key)) b.classList.add('on');
+        b.onclick=()=>{ sel.has(key)?sel.delete(key):sel.add(key); b.classList.toggle('on'); updateCnt(); autoSearch(); };
+      }
+      d.appendChild(b);
+    }
+    box.appendChild(d);
+  }
+  updateCnt();
+}
 function updateCnt(){
   const c=document.getElementById('cnt');
   c.textContent=sel.size+'개 선택';
@@ -642,13 +738,17 @@ function updateCnt(){
 // ----- 프리셋 -----
 document.getElementById('presets').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b||!qSyls) return;
+  if(dual&&!qSyls2) return;
   const last=qSyls.length-1;
   sel.clear();
-  if(b.dataset.p==='rhyme'){ sel.add(last+':1'); if(qSyls[last][2]) sel.add(last+':2'); }
-  else if(b.dataset.p==='last'){ sel.add(last+':0'); sel.add(last+':1'); if(qSyls[last][2]) sel.add(last+':2'); }
-  else if(b.dataset.p==='vowel2'){ sel.add(last+':1'); if(last>0) sel.add((last-1)+':1'); }
+  const ck=dual?commonKeys():null;   // 듀얼이면 공통 음소만 선택
+  const add=k=>{ if(!ck||ck.has(k)) sel.add(k); };
+  if(b.dataset.p==='rhyme'){ add(last+':1'); if(qSyls[last][2]) add(last+':2'); }
+  else if(b.dataset.p==='last'){ add(last+':0'); add(last+':1'); if(qSyls[last][2]) add(last+':2'); }
+  else if(b.dataset.p==='vowel2'){ add(last+':1'); if(last>0) add((last-1)+':1'); }
   // 'none' -> 그대로 빈 선택
-  renderSyls(compose(qSyls)); autoSearch();
+  if(dual) renderSylsDual(); else renderSyls(compose(qSyls));
+  autoSearch();
 });
 
 // ----- 유사도 계산 -----
@@ -678,19 +778,27 @@ function autoSearch(){
 function search(){
   const grid=document.getElementById('grid'), stat=document.getElementById('stat');
   grid.innerHTML=''; document.getElementById('more').style.display='none';
+  if(dual&&(!qSyls||!qSyls2)){
+    stat.innerHTML=(qSyls||qSyls2)?'공통 라임 검색: 두 단어를 모두 입력해 주세요.':'';
+    return;
+  }
   if(!qSyls||!sel.size){
-    stat.innerHTML=qSyls?'음소를 하나 이상 선택해 주세요.':'';
+    stat.innerHTML=!qSyls?'' : (dual&&!commonKeys().size)
+      ?'두 단어에 공통되는 음소가 없어요. 모드를 넓혀 보세요.'
+      :'음소를 하나 이상 선택해 주세요.';
     return;
   }
   if(!READY){ stat.innerHTML='아직 발음 사전을 만드는 중이에요. 잠시 후 다시 시도해 주세요.'; return; }
 
-  const qn=qSyls.length;
+  const qn=qSyls.length, qn2=dual?qSyls2.length:0;
   const conds=[...sel].map(k=>{
     const [i,slot]=k.split(':').map(Number);
-    return [qn-1-i, slot, qSyls[i][slot]];
+    const off=qn-1-i;
+    // 듀얼: 같은 그룹이라 검사 결과는 동일 — 단어2 값은 정확일치 카운트(정렬)에만 쓰임
+    return [off, slot, qSyls[i][slot], dual?qSyls2[qn2-1-off][slot]:-1];
   });
   const gm=mode==='x'?null:GROUPS[mode];
-  const qWord=document.getElementById('q').value.trim().split(/\s+/).pop().replace(/[^가-힣]/g,'');
+  const qWord=wordOf('q'), qWord2=dual?wordOf('q2'):'';
   const lenLimit=parseInt(document.getElementById('len-limit').value,10)||0;
   const t0=performance.now();
   results=[];
@@ -709,7 +817,7 @@ function search(){
 
   for(let i=0;i<N;i++){
     const w=WORDS[i];
-    if(w===qWord) continue;
+    if(w===qWord||(qWord2&&w===qWord2)) continue;
     if(lenLimit>0 && w.length!==lenLimit) continue;
     if(posActive){
       const pc=POS.charCodeAt(i);
@@ -719,12 +827,12 @@ function search(){
     const p=PRON[i];
     const pl=p.length;
     let ok=true, exact=0;
-    for(const [off,slot,val] of conds){
+    for(const [off,slot,val,val2] of conds){
       const pos=pl-1-off;
       if(pos<0){ ok=false; break; }
       const c=p.charCodeAt(pos)-0xAC00;
       const v= slot===0 ? (c/588)|0 : slot===1 ? ((c/28)|0)%21 : c%28;
-      if(v===val){ exact++; continue; }
+      if(v===val||v===val2){ exact++; continue; }
       if(!gm || gm[slot][v]!==gm[slot][val]){ ok=false; break; }
     }
     if(ok) results.push([exact, i]);
@@ -733,7 +841,9 @@ function search(){
   for (let j = 0; j < results.length; j++) {
     const i = results[j][1];
     const tD = decompose(PRON[i]);
-    results[j].push(tD ? getSim(qSyls, tD) : -999);
+    let sim = tD ? getSim(qSyls, tD) : -999;
+    if (dual && tD) sim += getSim(qSyls2, tD);   // 두 단어 모두와의 유사도 합산
+    results[j].push(sim);
   }
   results.sort((a,b)=> b[0]-a[0] || b[2]-a[2] || a[1]-b[1]);
 
@@ -795,12 +905,34 @@ qEl.addEventListener('keydown',e=>{
   else if(e.key==='Escape'){ qEl.value=''; analyze(); }
 });
 document.getElementById('clear').onclick=()=>{ qEl.value=''; analyze(); qEl.focus(); };
+const q2El=document.getElementById('q2');
+q2El.addEventListener('input',analyze);
+q2El.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ analyze(); search(); }
+  else if(e.key==='Escape'){ q2El.value=''; analyze(); }
+});
+document.getElementById('clear2').onclick=()=>{ q2El.value=''; analyze(); q2El.focus(); };
+document.getElementById('dual').addEventListener('change',e=>{
+  dual=e.target.checked;
+  document.getElementById('inbox2').hidden=!dual;
+  document.getElementById('pron2').hidden=!dual;
+  document.getElementById('ph-lab').textContent=dual?'공통 음소 (소리 기준)':'검색할 음소 (소리 기준)';
+  analyze();
+  if(dual&&!wordOf('q2')){ q2El.focus(); return; }
+  if(results.length||qSyls) autoSearch();
+});
 document.getElementById('go').onclick=search;
 document.getElementById('modes').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b)return;
   mode=b.dataset.m;
   document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));
   document.getElementById('mode-desc').textContent=b.dataset.d;
+  if(dual&&qSyls&&qSyls2){
+    // 모드가 바뀌면 공통 인정 범위도 바뀜 — 무효해진 선택을 걷어내고 선택창 재구성
+    const ck=commonKeys();
+    for(const k of [...sel]) if(!ck.has(k)) sel.delete(k);
+    renderSylsDual();
+  }
   if(results.length||qSyls) autoSearch();
 });
 
