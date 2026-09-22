@@ -111,6 +111,10 @@ button{font-family:inherit;color:inherit}
 .syl select{display:block;width:100%;padding:7px 4px;border:0;border-bottom:1px solid var(--line);
   background:var(--card);color:var(--pri-ink);font:inherit;font-size:11px;cursor:pointer}
 .syl select:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+.phoneme-row{display:flex;align-items:stretch}
+.phoneme-row+.phoneme-row{border-top:1px dashed var(--line)}
+.syl .phoneme-row button{flex:1;min-width:65px;width:auto}
+.syl .phoneme-row select{width:94px;border-bottom:0;border-left:1px solid var(--line)}
 .mode-label{text-align:center;color:var(--dim);font-size:12px;margin-top:16px}
 .syl button{display:flex;justify-content:space-between;gap:10px;width:100%;border:0;background:none;
   font-size:12px;padding:6px 9px;cursor:pointer;color:var(--dim);transition:background .12s}
@@ -312,8 +316,8 @@ footer a{color:var(--dim)}
     </div>
   </div>
 
-  <div class="mode-label">전체 글자에 적용 · 각 글자 아래에서 개별 변경 가능</div>
-  <div class="modes" id="modes" role="group" aria-label="전체 글자에 적용할 일치 방식">
+  <div class="mode-label">전체 음소에 적용 · 초성·중성·종성 옆에서 개별 변경 가능</div>
+  <div class="modes" id="modes" role="group" aria-label="전체 음소에 적용할 일치 방식">
     <button data-m="x" data-d="선택한 음소가 발음까지 정확히 같은 단어만 찾아요">완전 일치</button>
     <button data-m="p" class="on" data-d="ㄱ≈ㅋ, ㅐ≈ㅔ처럼 비슷하게 들리는 음소까지 허용해요">≈ 유사 음소</button>
     <button data-m="f" data-d="울림소리·막힘소리 같은 소리 성질이 같으면 넓게 허용해요">♪ 유사 속성</button>
@@ -574,10 +578,10 @@ const SLOTCHAR=(s,slot)=> slot===0?CHO[s[0]] : slot===1?JUNG[s[1]] : (s[2]?JONG[
 
 // ----- 상태 -----
 let mode='p', commonOnly=true, qSyls=null, qSyls2=null, dual=false, sel=new Set(), results=[], shown=0;
-let syllableModes=[];
+let phonemeModes=[];
 const MODE_LABELS={x:'완전 일치',p:'유사 음소',f:'유사 속성'};
-function groupsAt(i){
-  const m=syllableModes[i]||mode;
+function groupsAt(i,slot){
+  const m=phonemeModes[i]?.[slot]||mode;
   return m==='x'?null:GROUPS[m];
 }
 function refreshModes(){
@@ -590,25 +594,26 @@ function refreshModes(){
   autoSearch();
 }
 function updateModeSummary(){
-  const uniform=syllableModes.length?syllableModes.every(m=>m===syllableModes[0]):true;
-  const active=uniform?(syllableModes[0]||mode):null;
+  const modes=phonemeModes.flat();
+  const uniform=modes.every(m=>m===modes[0]);
+  const active=uniform?(modes[0]||mode):null;
   document.querySelectorAll('#modes button').forEach(b=>{
     b.classList.toggle('on',b.dataset.m===active);
     b.setAttribute('aria-pressed',String(b.dataset.m===active));
   });
   document.getElementById('mode-desc').textContent=active
     ?'선택한 음소에 '+MODE_LABELS[active]+'를 적용해요. 글자 전체를 맞추려면 음소를 모두 선택하세요.'
-    :'글자별 일치 방식을 사용 중이에요. 선택한 음소에만 적용돼요.';
+    :'음소별 일치 방식을 사용 중이에요. 선택한 음소에만 적용돼요.';
 }
-function modeSelect(i,label){
+function modeSelect(i,slot,label){
   const select=document.createElement('select');
-  select.setAttribute('aria-label',`${i+1}번째 음절 ${label}의 일치 방식`);
+  select.setAttribute('aria-label',`${i+1}번째 음절 ${label} ${SLOTNAME[slot]}의 일치 방식`);
   for(const [value,text] of Object.entries(MODE_LABELS)){
     const option=document.createElement('option');
     option.value=value; option.textContent=text; select.appendChild(option);
   }
-  select.value=syllableModes[i]||mode;
-  select.onchange=()=>{ syllableModes[i]=select.value; refreshModes(); };
+  select.value=phonemeModes[i]?.[slot]||mode;
+  select.onchange=()=>{ phonemeModes[i][slot]=select.value; refreshModes(); };
   return select;
 }
 const POS_ALL=['n','v','a','d','etc'];
@@ -663,8 +668,8 @@ function analyze(){
   const previous=qSyls;
   qSyls=readInput('q','clear','pron');
   qSyls2=readInput('q2','clear2','pron2');
-  syllableModes=(qSyls||[]).map((s,i)=>previous&&previous[i]&&s.every((v,j)=>v===previous[i][j])
-    ?(syllableModes[i]||mode):mode);
+  phonemeModes=(qSyls||[]).map((s,i)=>s.map((v,slot)=>previous?.[i]?.[slot]===v
+    ?(phonemeModes[i]?.[slot]||mode):mode));
   updateModeSummary();
   sel.clear();
   const box=document.getElementById('syls');
@@ -690,9 +695,9 @@ function commonKeys(){
   if(!qSyls||!qSyls2) return keys;
   const n1=qSyls.length, n2=qSyls2.length, L=Math.min(n1,n2);
   for(let k=1;k<=L;k++){
-    const gm=groupsAt(n1-k);
     const s1=qSyls[n1-k], s2=qSyls2[n2-k];
     for(let slot=0;slot<3;slot++){
+      const gm=groupsAt(n1-k,slot);
       if(s1[slot]===s2[slot]||(gm&&gm[slot][s1[slot]]===gm[slot][s2[slot]]))
         keys.add((n1-k)+':'+slot);
     }
@@ -713,14 +718,15 @@ function renderSyls(p){
       renderSyls(p); autoSearch();
     };
     d.appendChild(head);
-    d.appendChild(modeSelect(i,p[i]));
     for(let slot=0;slot<3;slot++){
       const b=document.createElement('button');
       b.innerHTML='<span class="g">'+SLOTNAME[slot]+'</span><span class="p">'+SLOTCHAR(s,slot)+'</span>';
       const k=i+':'+slot;
       if(sel.has(k)) b.classList.add('on');
       b.onclick=()=>{ sel.has(k)?sel.delete(k):sel.add(k); b.classList.toggle('on'); updateCnt(); autoSearch(); };
-      d.appendChild(b);
+      const row=document.createElement('div'); row.className='phoneme-row';
+      row.appendChild(b); row.appendChild(modeSelect(i,slot,p[i]));
+      d.appendChild(row);
     }
     box.appendChild(d);
   });
@@ -752,7 +758,6 @@ function renderSylsDual(){
       renderSylsDual(); autoSearch();
     };
     d.appendChild(head);
-    d.appendChild(modeSelect(i1,head.textContent));
     for(let slot=0;slot<3;slot++){
       const b=document.createElement('button');
       const c1=SLOTCHAR(s1,slot), c2=SLOTCHAR(s2,slot);
@@ -766,7 +771,9 @@ function renderSylsDual(){
         if(sel.has(key)) b.classList.add('on');
         b.onclick=()=>{ sel.has(key)?sel.delete(key):sel.add(key); b.classList.toggle('on'); updateCnt(); autoSearch(); };
       }
-      d.appendChild(b);
+      const row=document.createElement('div'); row.className='phoneme-row';
+      row.appendChild(b); row.appendChild(modeSelect(i1,slot,head.textContent));
+      d.appendChild(row);
     }
     box.appendChild(d);
   }
@@ -838,7 +845,7 @@ function search(){
     const [i,slot]=k.split(':').map(Number);
     const off=qn-1-i;
     // 듀얼: 같은 그룹이라 검사 결과는 동일 — 단어2 값은 정확일치 카운트(정렬)에만 쓰임
-    return [off, slot, qSyls[i][slot], dual?qSyls2[qn2-1-off][slot]:-1, groupsAt(i)];
+    return [off, slot, qSyls[i][slot], dual?qSyls2[qn2-1-off][slot]:-1, groupsAt(i,slot)];
   });
   const qWord=wordOf('q'), qWord2=dual?wordOf('q2'):'';
   const lenLimit=parseInt(document.getElementById('len-limit').value,10)||0;
@@ -967,7 +974,7 @@ document.getElementById('go').onclick=search;
 document.getElementById('modes').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b)return;
   mode=b.dataset.m;
-  syllableModes=(qSyls||[]).map(()=>mode);
+  phonemeModes=(qSyls||[]).map(()=>[mode,mode,mode]);
   refreshModes();
 });
 
