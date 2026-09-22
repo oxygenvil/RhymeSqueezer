@@ -271,7 +271,6 @@ footer a{color:var(--dim)}
 .col-ph .mode-desc{text-align:left;color:var(--dim)}
 .syl button.on,.syl button.on:hover{background:var(--algo-bg)}
 .syl button.on .g,.syl button.on .p{color:var(--algo-ink);opacity:1}
-.syl button .mark{font-size:12px;font-weight:800;align-self:center}
 .opts{margin-bottom:14px}
 .sort-row{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:22px;font-size:12px;color:var(--dim)}
 .sort-row select{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px}
@@ -592,7 +591,6 @@ const POS_ALL=['n','v','a','d','etc'];
 let posSel=new Set(POS_ALL), includeJosa=true;
 let bulk=true, hLiquid=true, individual=new Map(), savedBulk=new Set(), individualInitialized=false;
 const MODE_LABEL={x:'완전 일치',p:'유사 음소',f:'유사 속성'};
-const MODE_MARK={x:'＝',p:'≈',f:'♪'};
 function modeFor(k){return bulk?mode:(individual.get(k)||mode);}
 function matches(slot,a,b,m){
   if(a===b) return true;
@@ -622,7 +620,6 @@ function paintPhoneme(b,k){
   const on=sel.has(k), m=modeFor(k);
   b.classList.toggle('on',on); b.dataset.m=m; b.setAttribute('aria-pressed',String(on));
   b.title=on?MODE_LABEL[m]+' 적용 중':'검색 대상에서 제외됨';
-  if(on) b.innerHTML+='<span class="mark" aria-hidden="true">'+MODE_MARK[m]+'</span>';
   b.setAttribute('aria-label',b.textContent+(on?' · '+MODE_LABEL[m]:' · 미선택'));
 }
 const PAGE=60;
