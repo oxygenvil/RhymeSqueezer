@@ -254,11 +254,15 @@ footer a{color:var(--dim)}
 [data-m="x"]{--algo-bg:#982f43;--algo-ink:#fff}
 [data-m="p"]{--algo-bg:#f3d777;--algo-ink:#302600}
 [data-m="f"]{--algo-bg:#528db9;--algo-ink:#071b2c}
-.algorithm-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
-.algorithm-controls .modes{margin:0;flex-wrap:wrap;border-radius:14px}
-.algorithm-controls .modes button{font-size:12px;padding:8px 10px;color:var(--algo-ink);background:var(--algo-bg);opacity:.65}
+.algorithm-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;
+  width:fit-content;max-width:100%;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:4px 4px 4px 10px}
+.algorithm-controls .apply-toggle{border:0;padding:0 6px 0 0}
+.algorithm-controls .modes{margin:0;flex-wrap:wrap;gap:2px;background:none;border:0;padding:0;border-radius:0}
+.algorithm-controls .modes button{font-size:12px;padding:8px 12px;color:var(--algo-ink);background:var(--algo-bg);opacity:.65}
 .algorithm-controls .modes button.on{opacity:1;outline:2px solid var(--ink);outline-offset:1px}
 .apply-toggle{padding:7px 8px;border:1px solid var(--line2);border-radius:9px;white-space:nowrap}
+.ph-left{display:flex;align-items:center;gap:8px}
+.lab .h-tog{padding:4px 9px;color:var(--dim)}
 .syl button.on,.syl button.on:hover{background:var(--algo-bg)}
 .syl button.on .g,.syl button.on .p{color:var(--algo-ink);opacity:1}
 .opts{margin-bottom:14px}
@@ -301,15 +305,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
       <div class="pron">분석한 발음<b id="pron">—</b><b id="pron2" hidden>—</b></div>
     </div>
     <div class="col-ph">
-      <div class="algorithm-controls"><label class="tog apply-toggle"><input type="checkbox" id="bulk" checked>일괄 적용</label>  <div class="modes" id="modes" role="group" aria-label="일치 모드">
+      <div class="algorithm-controls"><label class="tog apply-toggle"><input type="checkbox" id="bulk" checked>일괄 적용</label>
+  <div class="modes" id="modes" role="group" aria-label="일치 모드">
     <button data-m="x" data-d="선택한 음소가 발음까지 정확히 같은 단어만 찾아요">＝ 완전 일치</button>
     <button data-m="p" class="on" data-d="ㄱ≈ㅋ, ㅐ≈ㅔ처럼 비슷하게 들리는 음소까지 허용해요">≈ 유사 음소</button>
     <button data-m="f" data-d="울림소리·막힘소리 같은 소리 성질이 같으면 넓게 허용해요">♪ 유사 속성</button>
   </div>
-<label class="tog apply-toggle" title="유사 검색에서 초성 ㅎ을 ㄴ·ㅁ·ㄹ·ㅇ과 같은 그룹으로 허용합니다"><input type="checkbox" id="h-liquid" checked>ㅎ 유음화</label></div>
+</div>
 
-
-      <div class="lab"><span id="ph-lab">검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택</span></div>
+      <div class="lab ph-row"><span class="ph-left"><span id="ph-lab">검색할 음소</span><label class="tog apply-toggle h-tog" title="유사 검색에서 초성 ㅎ을 ㄴ·ㅁ·ㄹ·ㅇ과 같은 그룹으로 허용합니다"><input type="checkbox" id="h-liquid" checked>ㅎ 유음화</label></span><span class="cnt" id="cnt">0개 선택</span></div>
       <div id="syls"></div>
     </div>
   </div>
