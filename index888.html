@@ -93,14 +93,6 @@ button{font-family:inherit;color:inherit}
 .pron b .from{font-size:12px;color:var(--faint);font-weight:500;margin-left:6px}
 .pron b[hidden]{display:none}
 
-/* 프리셋 */
-.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.presets button{border:1px solid var(--line);background:var(--card);border-radius:999px;
-  font-size:11.5px;padding:5px 11px;cursor:pointer;color:var(--dim);font-weight:600;
-  transition:all .13s}
-.presets button:hover{border-color:var(--pri);color:var(--pri-ink);background:var(--pri-soft)}
-.presets button:disabled{opacity:.4;cursor:default;pointer-events:none}
-
 /* 음절 셀렉터 */
 #syls{display:flex;gap:9px;flex-wrap:wrap;min-height:104px;align-items:flex-start}
 .syl{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--card);
@@ -134,7 +126,6 @@ button{font-family:inherit;color:inherit}
   transition:all .15s}
 .modes button.on{background:var(--card);color:var(--pri-ink);font-weight:700;
   box-shadow:0 1px 4px rgba(23,27,38,.10)}
-.mode-desc{text-align:center;font-size:11.5px;color:var(--faint);margin-bottom:14px;min-height:17px}
 
 /* 모드 툴팁 */
 #mtip{position:fixed;z-index:20;max-width:340px;background:var(--card);border:1px solid var(--line2);
@@ -268,7 +259,6 @@ footer a{color:var(--dim)}
 .algorithm-controls .modes button{font-size:12px;padding:8px 10px;color:var(--algo-ink);background:var(--algo-bg);opacity:.65}
 .algorithm-controls .modes button.on{opacity:1;outline:2px solid var(--ink);outline-offset:1px}
 .apply-toggle{padding:7px 8px;border:1px solid var(--line2);border-radius:9px;white-space:nowrap}
-.col-ph .mode-desc{text-align:left;color:var(--dim)}
 .syl button.on,.syl button.on:hover{background:var(--algo-bg)}
 .syl button.on .g,.syl button.on .p{color:var(--algo-ink);opacity:1}
 .opts{margin-bottom:14px}
@@ -317,19 +307,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <button data-m="f" data-d="울림소리·막힘소리 같은 소리 성질이 같으면 넓게 허용해요">♪ 유사 속성</button>
   </div>
 <label class="tog apply-toggle" title="유사 검색에서 초성 ㅎ을 ㄴ·ㅁ·ㄹ·ㅇ과 같은 그룹으로 허용합니다"><input type="checkbox" id="h-liquid" checked>ㅎ 유음화</label></div>
-  <div class="mode-desc" id="mode-desc">ㄱ≈ㅋ, ㅐ≈ㅔ처럼 비슷하게 들리는 음소까지 허용해요</div>
 
 
       <div class="lab"><span id="ph-lab">검색할 음소 (소리 기준)</span><span class="cnt" id="cnt">0개 선택</span></div>
-      <div class="presets" id="presets">
-        <button data-p="rhyme" disabled>끝 모음+받침</button>
-        <button data-p="last" disabled>끝 음절 전체</button>
-        <button data-p="vowel2" disabled>끝 2음절 모음</button>
-        <button data-p="none" disabled>모두 해제</button>
-      </div>
-      <div id="syls"><div class="hint">단어를 입력하면 음절이 나타나요.<br>
-        초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>
-        음절 글자를 누르면 그 음절 전체가 토글돼요.</div></div>
+      <div id="syls"></div>
     </div>
   </div>
 
@@ -648,14 +629,6 @@ if(POS) document.getElementById('pos-opts').hidden=false;
 })();
 
 // ----- 입력 분석 -----
-function setPresetsEnabled(on){
-  document.querySelectorAll('#presets button').forEach(b=>b.disabled=!on);
-}
-const HINT_SINGLE='<div class="hint">단어를 입력하면 음절이 나타나요.<br>'+
-  '초성·중성·종성을 탭해 검색 조건을 고르고 <span class="kbd">Enter</span>를 눌러 검색하세요.<br>'+
-  '음절 글자를 누르면 그 음절 전체가 토글돼요.</div>';
-const HINT_DUAL='<div class="hint">두 단어를 모두 입력하면 <b>공통 음소</b>가 나타나요.<br>'+
-  '두 단어가 같은 소리로 인정되는 음소만 선택할 수 있어요.</div>';
 function wordOf(id){
   return document.getElementById(id).value.trim().split(/\s+/).pop().replace(/[^가-힣]/g,'');
 }
@@ -674,19 +647,17 @@ function analyze(){
   sel=new Set(); individual.clear(); savedBulk.clear(); individualInitialized=false;
   const box=document.getElementById('syls');
   if(dual){
-    if(!qSyls||!qSyls2){ setPresetsEnabled(false); box.innerHTML=HINT_DUAL; updateCnt(); return; }
+    if(!qSyls||!qSyls2){ box.innerHTML=''; updateCnt(); return; }
     const ck=commonKeys(), last=qSyls.length-1;
     if(ck.has(last+':1')) sel.add(last+':1');
     if(qSyls[last][2]&&ck.has(last+':2')) sel.add(last+':2');
-    setPresetsEnabled(true);
     if(!bulk){sel.forEach(k=>individual.set(k,mode));individualInitialized=true;}
     renderSylsDual();
   }else{
-    if(!qSyls){ setPresetsEnabled(false); box.innerHTML=HINT_SINGLE; updateCnt(); return; }
+    if(!qSyls){ box.innerHTML=''; updateCnt(); return; }
     const last=qSyls.length-1;
     sel.add(last+':1');
     if(qSyls[last][2]) sel.add(last+':2');
-    setPresetsEnabled(true);
     if(!bulk){sel.forEach(k=>individual.set(k,mode));individualInitialized=true;}
     renderSyls(compose(qSyls));
   }
@@ -784,23 +755,6 @@ function updateCnt(){
   c.textContent=sel.size+'개 선택';
   c.classList.add('bump'); setTimeout(()=>c.classList.remove('bump'),160);
 }
-
-// ----- 프리셋 -----
-document.getElementById('presets').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b||!qSyls) return;
-  if(dual&&!qSyls2) return;
-  const last=qSyls.length-1;
-  sel.clear();
-  if(!bulk) individual.clear();
-  const ck=dual?commonKeys():null;   // 듀얼이면 공통 음소만 선택
-  const add=k=>{ if((!ck||ck.has(k))&&canSelect(k,mode)){sel.add(k);if(!bulk) individual.set(k,mode);} };
-  if(b.dataset.p==='rhyme'){ add(last+':1'); if(qSyls[last][2]) add(last+':2'); }
-  else if(b.dataset.p==='last'){ add(last+':0'); add(last+':1'); if(qSyls[last][2]) add(last+':2'); }
-  else if(b.dataset.p==='vowel2'){ add(last+':1'); if(last>0) add((last-1)+':1'); }
-  // 'none' -> 그대로 빈 선택
-  if(dual) renderSylsDual(); else renderSyls(compose(qSyls));
-  autoSearch();
-});
 
 // ----- 유사도 계산 -----
 function getSim(qD, tD) {
@@ -984,7 +938,6 @@ document.getElementById('modes').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b)return;
   mode=b.dataset.m;
   document.querySelectorAll('#modes button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',String(x===b));});
-  document.getElementById('mode-desc').textContent=b.dataset.d;
   refreshSelection();
   if(results.length||qSyls) autoSearch();
 });
