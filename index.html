@@ -266,10 +266,42 @@ footer a{color:var(--dim)}
 .sort-row{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:22px;font-size:12px;color:var(--dim)}
 .sort-row select{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px}
 button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* 검색 패널 아래에서 출발해 화면 상단에 고정되는 결과 도구 */
+#go{margin-top:22px}
+.result-toolbar{position:sticky;top:0;z-index:8;display:flex;justify-content:flex-start;align-items:center;gap:4px;margin-top:8px;padding:6px 0;background:var(--bg);border-bottom:1px solid var(--line);}
+.toolbar-popup.open-above{top:auto;bottom:calc(100% + 4px)}
+.toolbar-menu>summary,.toolbar-return{list-style:none;cursor:pointer;border:1px solid var(--line2);border-radius:8px;background:var(--card);padding:7px 9px;font:inherit;font-size:13px;font-weight:700;color:var(--ink);}
+.toolbar-menu>summary::-webkit-details-marker{display:none}
+.toolbar-menu>summary::after{content:' ▾';color:var(--dim)}
+.toolbar-menu[open]>summary{border-color:var(--pri);background:var(--pri-soft)}
+#sort-label{font-size:11px;color:var(--dim);margin-left:4px}
+.toolbar-popup{position:absolute;left:0;top:calc(100% + 4px);width:min(300px,100%);max-height:calc(100dvh - 90px);overflow:auto;overscroll-behavior:contain;padding:12px;background:var(--card);border:1px solid var(--line2);border-radius:12px;box-shadow:var(--shadow-lg)}
+.toolbar-popup fieldset{border:0;padding:0;margin:0;min-width:0}
+#filter-menu fieldset{border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:9px}
+#filter-menu .toolbar-popup>fieldset:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0}
+#sort-menu .toolbar-popup{width:min(250px,100%);padding:10px 12px}
+#alphabet-section{border-top:1px solid var(--line);margin-top:8px;padding-top:10px}
+.length-filter{display:flex;align-items:center;gap:10px}
+.num-wrap input:disabled,.num-wrap button:disabled{opacity:.4;cursor:default}
+.toolbar-popup fieldset:last-child{margin-bottom:0}
+.toolbar-popup legend,.toolbar-popup h3{font-size:13px;font-weight:800;margin-bottom:10px;color:var(--ink)}
+.toolbar-popup .tog{padding:5px 0;color:var(--ink)}
+.toolbar-popup input{accent-color:var(--pri)}
+#pos-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:10px}
+.menu-help{font-size:11px;color:var(--dim);margin:6px 0 10px}
+#alphabet-index{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+#alphabet-index button{padding:9px 4px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);cursor:pointer;font:inherit}
+#alphabet-index button:disabled{opacity:.3;cursor:default}
+#alphabet-index button small{display:block;font-size:9px;color:var(--dim)}
+.result-heading{grid-column:1/-1;font-size:17px;color:var(--pri-ink);padding:16px 3px 4px;scroll-margin-top:80px;}
+#stat{scroll-margin-top:70px;margin-top:12px}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--pri);outline-offset:3px}
+@media(max-width:560px){.toolbar-menu>summary,.toolbar-return{padding:7px 8px;font-size:12px}#sort-label{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
+<section class="search-stage" aria-label="라임 검색 조건">
 
 <div class="topbar">
   <div class="brand">
@@ -315,36 +347,44 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     </div>
   </div>
 
-  <div class="opts">
-    <label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만(부정확함)</label>
-    <label class="tog" title="0은 제한 없음">
-      글자수
-      <span class="num-wrap">
-        <button type="button" id="len-dec" aria-label="글자수 줄이기">−</button>
-        <input type="number" id="len-limit" value="0" min="0" aria-label="글자수 제한 (0은 제한 없음)">
-        <button type="button" id="len-inc" aria-label="글자수 늘리기">＋</button>
-      </span>
-    </label>
-  </div>
   <button id="go">라임 검색</button>
-  <div class="opts2" id="pos-opts" hidden>
-    <div class="pos-chips" id="pos-chips" role="group" aria-label="품사 필터 (복수 선택)">
-      <button data-pos="n" class="on" aria-pressed="true">명사</button>
-      <button data-pos="v" class="on" aria-pressed="true">동사</button>
-      <button data-pos="a" class="on" aria-pressed="true">형용사</button>
-      <button data-pos="d" class="on" aria-pressed="true">부사</button>
-      <button data-pos="etc" class="on" aria-pressed="true">기타</button>
-    </div>
-    <span class="pos-acts">
-      <button type="button" id="pos-all">전체선택</button>
-      <button type="button" id="pos-none">전체해제</button>
-    </span>
-    <label class="tog" title="예: 당신이, 학교에서 같은 조사 결합형">
-      <input type="checkbox" id="josa" checked>조사 붙은 형태 포함</label>
-  </div>
 </div>
+</section>
+<nav class="result-toolbar" id="result-toolbar" aria-label="검색 결과 도구">
+  <details id="sort-menu" class="toolbar-menu">
+    <summary>정렬 <span id="sort-label">유사도순</span></summary>
+    <div class="toolbar-popup">
+      <fieldset aria-label="정렬 방식">
+        <label class="tog"><input type="radio" name="result-sort" value="similarity" checked>유사도순</label>
+        <label class="tog"><input type="radio" name="result-sort" value="alphabetical">가나다순</label>
+      </fieldset>
+      <div id="alphabet-section" hidden><h3>첫소리로 바로가기</h3><p class="menu-help">해당 첫소리의 첫 결과로 이동합니다.</p><div id="alphabet-index"></div></div>
+    </div>
+  </details>
+  <details id="filter-menu" class="toolbar-menu">
+    <summary>필터</summary>
+    <div class="toolbar-popup">
+      <div id="pos-opts" hidden>
+        <fieldset aria-label="품사"><div id="pos-chips">
+          <label class="tog"><input type="checkbox" data-pos="n" checked>명사</label>
+          <label class="tog"><input type="checkbox" data-pos="v" checked>동사</label>
+          <label class="tog"><input type="checkbox" data-pos="a" checked>형용사</label>
+          <label class="tog"><input type="checkbox" data-pos="d" checked>부사</label>
+          <label class="tog"><input type="checkbox" data-pos="etc" checked>기타</label>
+        </div><div class="pos-acts"><button type="button" id="pos-all">전체선택</button><button type="button" id="pos-none">전체해제</button></div></fieldset>
+        <fieldset aria-label="조사 포함"><label class="tog"><input type="checkbox" id="josa" checked>조사 붙은 형태 포함</label></fieldset>
+      </div>
+      <fieldset aria-label="글자수"><div class="length-filter">
+        <label class="tog" title="입력 단어의 음절 수로 자동 설정됩니다. 공통 라임은 첫 번째 단어를 기준으로 합니다."><input type="checkbox" id="len-enabled">글자수</label>
+        <span class="num-wrap"><button type="button" id="len-dec" aria-label="글자수 줄이기" disabled>−</button><input type="number" id="len-limit" value="1" min="1" step="1" aria-label="검색할 글자수" disabled><button type="button" id="len-inc" aria-label="글자수 늘리기" disabled>＋</button></span>
+      </div></fieldset>
+      <fieldset aria-label="자주 쓰는 말"><label class="tog"><input type="checkbox" id="common" checked>자주 쓰는 말만 (부정확함)</label></fieldset>
+    </div>
+  </details>
+  <button type="button" class="toolbar-return" id="results-top">결과 처음 ↑</button>
+  <button type="button" class="toolbar-return" id="search-top">입력으로 ↑</button>
+</nav>
 
-<div class="sort-row"><label for="result-sort">검색 결과 정렬</label><select id="result-sort"><option value="similarity">유사도순</option><option value="alphabetical">가나다순</option></select></div>
 <div id="stat"></div>
 <div id="grid"></div>
 <button id="more">더 보기</button>
@@ -645,6 +685,11 @@ function readInput(qid,clearId,prId){
 function analyze(){
   qSyls=readInput('q','clear','pron');
   qSyls2=readInput('q2','clear2','pron2');
+  const lengthWord=wordOf('q');
+  if(lengthWord!==lastLengthWord){
+    document.getElementById('len-limit').value=qSyls?Math.max(1,qSyls.length):1;
+    lastLengthWord=lengthWord;
+  }
   sel=new Set(); individual.clear(); savedBulk.clear(); individualInitialized=false;
   const box=document.getElementById('syls');
   if(dual){
@@ -779,7 +824,7 @@ function autoSearch(){
 }
 function search(){
   const grid=document.getElementById('grid'), stat=document.getElementById('stat');
-  results=[]; shown=0;
+  results=[]; shown=0; lastConds=null; updateAlphabet();
   grid.innerHTML=''; document.getElementById('more').style.display='none';
   if(dual&&(!qSyls||!qSyls2)){
     stat.innerHTML=(qSyls||qSyls2)?'공통 라임 검색: 두 단어를 모두 입력해 주세요.':'';
@@ -801,7 +846,8 @@ function search(){
     return [off, slot, qSyls[i][slot], dual?qSyls2[qn2-1-off][slot]:-1, modeFor(k)];
   });
   const qWord=wordOf('q'), qWord2=dual?wordOf('q2'):'';
-  const lenLimit=parseInt(document.getElementById('len-limit').value,10)||0;
+  const lenLimit=document.getElementById('len-enabled').checked
+    ? Math.max(1,parseInt(document.getElementById('len-limit').value,10)||1) : 0;
   const t0=performance.now();
   results=[];
   const N=commonOnly?RANKED:WORDS.length;
@@ -847,7 +893,7 @@ function search(){
     if (dual && tD) sim += getSim(qSyls2, tD);   // 두 단어 모두와의 유사도 합산
     results[j].push(sim);
   }
-  sortResults();
+  sortResults(); updateAlphabet();
 
   const ms=(performance.now()-t0).toFixed(0);
   shown=0;
@@ -864,13 +910,6 @@ function search(){
     '<span class="legend"><i></i>조건에 맞은 소리 · 카드를 누르면 복사돼요</span>';
   render(conds);
 }
-function sortResults(){
-  if(document.getElementById('result-sort').value==='alphabetical') results.sort((a,b)=>WORDS[a[1]].localeCompare(WORDS[b[1]],'ko')||a[1]-b[1]);
-  else results.sort((a,b)=>b[0]-a[0]||b[2]-a[2]||a[1]-b[1]);
-}
-document.getElementById('result-sort').addEventListener('change',()=>{
-  sortResults(); shown=0; document.getElementById('grid').innerHTML=''; if(results.length&&lastConds) render();
-});
 let lastConds=null;
 function render(conds){
   if(conds) lastConds=conds; else conds=lastConds;
@@ -879,6 +918,11 @@ function render(conds){
   const frag=document.createDocumentFragment();
   for(let k=shown;k<end;k++){
     const [ex,i]=results[k], w=WORDS[i], p=PRON[i];
+    if(sortOrder==='alphabetical'&&(k===0||initialOf(WORDS[results[k-1][1]])!==initialOf(w))){
+      const heading=document.createElement('h2'); heading.className='result-heading';
+      heading.id='initial-'+initialOf(w); heading.tabIndex=-1; heading.textContent=initialOf(w);
+      frag.appendChild(heading);
+    }
     const card=document.createElement('div'); card.className='card'; card.dataset.w=w;
     card.style.animationDelay=Math.min((k-shown)*12,240)+'ms';
     const hits={};
@@ -905,6 +949,60 @@ function render(conds){
   document.getElementById('more').style.display= shown<results.length?'block':'none';
 }
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+
+// 정렬과 가나다 목차. 바로가기는 앞선 수만 개 카드를 만들지 않고 해당 위치부터 표시한다.
+let sortOrder='similarity';
+const koreanCollator=new Intl.Collator('ko');
+const initialOf=w=>CHO[Math.floor((w.charCodeAt(0)-0xAC00)/588)]||'기타';
+const alphabetGroups=new Map();
+function sortResults(){
+  results.sort(sortOrder==='alphabetical'
+    ?(a,b)=>koreanCollator.compare(WORDS[a[1]],WORDS[b[1]])||a[1]-b[1]
+    :(a,b)=>b[0]-a[0]||b[2]-a[2]||a[1]-b[1]);
+}
+function updateAlphabet(){
+  alphabetGroups.clear();
+  results.forEach((r,i)=>{const c=initialOf(WORDS[r[1]]); if(!alphabetGroups.has(c)) alphabetGroups.set(c,{start:i,count:0}); alphabetGroups.get(c).count++;});
+  const box=document.getElementById('alphabet-index'); box.replaceChildren();
+  for(const c of CHO){
+    const group=alphabetGroups.get(c), b=document.createElement('button');
+    b.type='button'; b.disabled=!group; b.textContent=c;
+    const count=document.createElement('small'); count.textContent=group?group.count.toLocaleString()+'개':'0개'; b.append(count);
+    b.setAttribute('aria-label',c+' 첫 결과로 이동'+(group?' · '+group.count+'개':''));
+    b.onclick=()=>{document.getElementById('sort-menu').open=false; shown=group.start; document.getElementById('grid').replaceChildren(); render(); const target=document.getElementById('initial-'+c); target.focus({preventScroll:true}); target.scrollIntoView({block:'start'});};
+    box.append(b);
+  }
+}
+document.querySelectorAll('input[name="result-sort"]').forEach(r=>r.addEventListener('change',()=>{
+  sortOrder=r.value; document.getElementById('sort-label').textContent=r.value==='alphabetical'?'가나다순':'유사도순';
+  document.getElementById('alphabet-section').hidden=r.value!=='alphabetical';
+  sortResults(); updateAlphabet(); shown=0; document.getElementById('grid').replaceChildren();
+  if(results.length&&lastConds) render();
+}));
+const toolbar=document.getElementById('result-toolbar');
+const menus=[...toolbar.querySelectorAll('details')];
+function placePopups(){
+  const rect=toolbar.getBoundingClientRect();
+  menus.forEach(m=>{
+    if(!m.open) return;
+    const popup=m.querySelector('.toolbar-popup');
+    const below=innerHeight-rect.bottom-12, above=rect.top-12;
+    const up=below<Math.min(popup.scrollHeight,380)&&above>below;
+    popup.classList.toggle('open-above',up);
+    popup.style.maxHeight=Math.max(100,up?above:below)+'px';
+  });
+}
+menus.forEach(m=>{
+  m.querySelector('summary').addEventListener('click',()=>{menus.forEach(other=>{if(other!==m) other.open=false;});});
+  m.addEventListener('toggle',placePopups);
+});
+addEventListener('scroll',placePopups,{passive:true});
+addEventListener('resize',placePopups);
+document.addEventListener('click',e=>{if(!toolbar.contains(e.target)) menus.forEach(m=>m.open=false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const active=menus.find(m=>m.open); if(active){active.open=false;active.querySelector('summary').focus();}}});
+document.getElementById('results-top').onclick=()=>{menus.forEach(m=>m.open=false); if(results.length&&lastConds){shown=0;document.getElementById('grid').replaceChildren();render();} document.getElementById('stat').scrollIntoView({block:'start'});};
+document.getElementById('search-top').onclick=()=>{menus.forEach(m=>m.open=false);document.getElementById('q').focus({preventScroll:true});window.scrollTo({top:0});};
+updateAlphabet();
 
 // ----- 이벤트 -----
 const qEl=document.getElementById('q');
@@ -1017,14 +1115,13 @@ document.getElementById('common').addEventListener('change',e=>{commonOnly=e.tar
 
 // ----- 품사 필터 (복수 선택) -----
 function syncPosChips(){
-  document.querySelectorAll('#pos-chips button').forEach(b=>{
+  document.querySelectorAll('#pos-chips input').forEach(b=>{
     const on=posSel.has(b.dataset.pos);
-    b.classList.toggle('on',on);
-    b.setAttribute('aria-pressed',on);
+    b.checked=on;
   });
 }
-document.getElementById('pos-chips').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b) return;
+document.getElementById('pos-chips').addEventListener('change',e=>{
+  const b=e.target.closest('input'); if(!b) return;
   const p=b.dataset.pos;
   posSel.has(p)?posSel.delete(p):posSel.add(p);
   syncPosChips(); autoSearch();
@@ -1038,17 +1135,28 @@ document.getElementById('pos-none').addEventListener('click',()=>{
 document.getElementById('josa').addEventListener('change',e=>{includeJosa=e.target.checked; autoSearch();});
 
 const lenInp=document.getElementById('len-limit');
+let lastLengthWord='';
+document.getElementById('len-enabled').addEventListener('change',e=>{
+  lenInp.disabled=!e.target.checked;
+  document.getElementById('len-dec').disabled=!e.target.checked;
+  document.getElementById('len-inc').disabled=!e.target.checked;
+  autoSearch();
+});
 document.getElementById('len-dec').addEventListener('click',()=>{
-  const v=parseInt(lenInp.value,10)||0;
-  if(v>0){ lenInp.value=v-1; autoSearch(); }
+  const v=parseInt(lenInp.value,10)||1;
+  if(v>1){ lenInp.value=v-1; autoSearch(); }
 });
 document.getElementById('len-inc').addEventListener('click',()=>{
-  lenInp.value=(parseInt(lenInp.value,10)||0)+1;
+  lenInp.value=(parseInt(lenInp.value,10)||1)+1;
   autoSearch();
 });
 lenInp.addEventListener('input',()=>{
-  if((parseInt(lenInp.value,10)||0)<0) lenInp.value=0;
+  const value=parseInt(lenInp.value,10);
+  if(Number.isFinite(value)) lenInp.value=Math.max(1,value);
   autoSearch();
+});
+lenInp.addEventListener('change',()=>{
+  lenInp.value=Math.max(1,parseInt(lenInp.value,10)||1);
 });
 
 // 더 보기 + 무한 스크롤
